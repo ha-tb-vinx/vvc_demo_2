@@ -1,0 +1,236 @@
+package mdware.master.common.bean;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import jp.co.vinculumjapan.mdware.common.util.MessageUtil;
+import jp.co.vinculumjapan.stc.util.servlet.DataHolder;
+import jp.co.vinculumjapan.stc.util.servlet.SessionManager;
+import mdware.common.resorces.util.ResorceUtil;
+import mdware.master.common.dictionary.mst000101_ConstDictionary;
+
+/**
+ * <p>タイトル	：新ＭＤシステム（マスタ管理）店別品種(品種)登録画面のデータ入力チェッククラス</p>
+ * <p>説明		：新ＭＤシステムで使用する店別品種(品種)マスタ登録画面のデータ入力チェッククラス</p>
+ * <p>著作権	：Copyright (c) 2005</p>
+ * <p>会社名	：Vinculum Japan Corp.</p>
+ * @author VINX
+ * @version 1.01 2014/09/15 ha.ntt 内結障害NO.001対応
+ */
+public class mst790401_CheckBean
+{
+	/**
+	 *
+	 * 権限チェック・KeepBeenへのセット・エラーチェックを行う。
+	 * @param 		DataHolder 	dataHolder
+	 * @param		String		kengenCd		: 権限コード
+	 * @param		String 		GamenId 		: 画面ID
+	 * @param		String 		FirstFocusCtl  	: 初期Focusｺﾝﾄﾛｰﾙ
+	 * @param		String[] 	CtrlName 		: コントロール名
+	 */
+	public void Check(
+			mst000101_DbmsBean db,
+			mst790201_KeepBean Keepb,
+			mst790301_KeepMeisaiBean KeepMeisaib,
+			DataHolder dataHolder,
+			String kengenCd,
+			String GamenId,
+			String FirstFocusCtl,
+			String[] CtrlName,
+			Map CtrlColor,
+			SessionManager  sessionManager) throws Exception,SQLException {
+		// メッセージ取得
+		TreeMap map = new TreeMap(mst000401_LogicBean.getMsg());
+
+		Keepb.setErrorFlg(mst000101_ConstDictionary.ERR_CHK_NORMAL);
+		Keepb.setErrorMessage("");
+
+		// 初期Focus
+		Keepb.setFirstFocus(FirstFocusCtl);
+
+		// マスタ管理日付
+		DataHolder dh = new DataHolder();
+		mst870201_MstDateBean mstDateBean = mst870201_MstDateBean.getBean(dh);
+		String strMstDate = mstDateBean.getMstDateDt();
+		String strMstDateNext = mstDateBean.getMstDateDtNext();
+		Keepb.setMstDate(strMstDate);
+		Keepb.setMstDateNext(strMstDateNext);
+
+		if(Keepb.getErrorFlg().equals(mst000101_ConstDictionary.ERR_CHK_NORMAL)){
+
+			if(!Keepb.getCheckFlg().equals(mst000101_ConstDictionary.CHECK_INIT)){
+
+				//画面内容を保存(ヘッダ部)
+
+				// 品種コード
+				Keepb.setHinsyuCd( mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_hinsyu_cd")).trim() );
+				// 処理区分
+				Keepb.setProcessingDivision( mst000401_LogicBean.chkNullString(dataHolder.getParameter("rb_syorikb")).trim() );
+
+				//画面内容を保存(明細部)
+				List meisai = KeepMeisaib.getMeisai();
+				ArrayList meisaiList = new ArrayList();
+				for (int i = 0; i < meisai.size(); i++) {
+
+					mst790101_TenbetsuHinsyuHinsyuBean dbBean = (mst790101_TenbetsuHinsyuHinsyuBean)meisai.get(i);
+
+					if( dbBean.getDisbale() == null || dbBean.getDisbale().equals("") ){
+
+						// 選択フラグ
+						dbBean.setSentaku(mst000401_LogicBean.chkNullString(dataHolder.getParameter("ct_sentaku"+Integer.toString(i))));
+
+						// 店舗
+						dbBean.setTenpoCd(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_tenpo_cd"+Integer.toString(i))));
+						// 店名
+						dbBean.setTenpoNa(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_tenpo_na"+Integer.toString(i))));
+						// 取扱開始日
+						dbBean.setAtukaiStDt(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_atukai_st_dt"+Integer.toString(i))));
+						// 取扱終了日
+						dbBean.setAtukaiEdDt(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_atukai_ed_dt"+Integer.toString(i))));
+						// ＰＣ送信区分
+						if(mst000401_LogicBean.chkNullString(dataHolder.getParameter("ct_sentakuPC"+Integer.toString(i))).equals("")){
+							dbBean.setPcSendKb("0");
+						}else{
+							dbBean.setPcSendKb(mst000401_LogicBean.chkNullString(dataHolder.getParameter("ct_sentakuPC"+Integer.toString(i))));
+						}
+						// 送信日
+						dbBean.setSendDt(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_send_dt"+Integer.toString(i))));
+						// 登録日
+						dbBean.setInsertTs(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_insert_ts"+Integer.toString(i))));
+						// 登録者
+						dbBean.setInsertUserId(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_insert_user_id"+Integer.toString(i))));
+						// 更新日
+						dbBean.setUpdateTs(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_update_ts"+Integer.toString(i))));
+						// 更新者
+						dbBean.setUpdateUserId(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_update_user_id"+Integer.toString(i))));
+						// 単品数
+						dbBean.setTanpinQt(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_tanpin_qt"+Integer.toString(i))));
+
+
+						// 取扱開始日チェック
+						String[] strReturn = new String[3];
+						if(!Keepb.getProcessingDivision().equals(mst000101_ConstDictionary.PROCESS_DELETE)){
+							// 選択時のみ
+							if( dbBean.getSentaku().equals(mst000101_ConstDictionary.SENTAKU_CHOICE) ){
+								// 新規時
+								if(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_insert_ts"+Integer.toString(i))).equals("")){
+									if(Long.parseLong(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_atukai_st_dt"+Integer.toString(i)))) < Long.parseLong(strMstDateNext)){
+
+										mst000401_LogicBean.setErrorBackColor(CtrlColor,"tx_atukai_st_dt"+Integer.toString(i));
+										Keepb.setErrorMessage("翌日以降の日付を入力してください。");
+										if( Keepb.getErrorFlg().equals( mst000101_ConstDictionary.ERR_CHK_NORMAL ) ){
+											Keepb.setErrorFlg(mst000101_ConstDictionary.ERR_CHK_ERROR);
+											Keepb.setFirstFocus("tx_atukai_st_dt"+Integer.toString(i));
+										}
+									}
+								}else{
+									if(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_send_dt"+Integer.toString(i))).equals("")){
+										if(Long.parseLong(mst000401_LogicBean.chkNullString(dataHolder.getParameter("tx_atukai_st_dt"+Integer.toString(i)))) < Long.parseLong(strMstDateNext)){
+											mst000401_LogicBean.setErrorBackColor(CtrlColor,"tx_atukai_st_dt"+Integer.toString(i));
+											Keepb.setErrorMessage("翌日以降の日付を入力してください。");
+
+											if( Keepb.getErrorFlg().equals( mst000101_ConstDictionary.ERR_CHK_NORMAL ) ){
+												Keepb.setErrorFlg(mst000101_ConstDictionary.ERR_CHK_ERROR);
+												Keepb.setFirstFocus("tx_atukai_st_dt"+Integer.toString(i));
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					meisaiList.add(dbBean);
+				}
+				KeepMeisaib.setMeisai(meisaiList);
+			}
+
+			Map param = new HashMap();		//抽出条件格納用
+			ResultSet rset = null;			//抽出結果(ResultSet)
+
+
+			// メニューバーアイコン取得
+			mst000501_SysSosasyaBean SysUserBean = new mst000501_SysSosasyaBean();
+			SysUserBean = (mst000501_SysSosasyaBean)sessionManager.getAttribute("SysSosasyaSesson");
+			Map menuMap = new HashMap();
+			menuMap.put("gamen_id", GamenId);
+			menuMap.put("kengen_cd", kengenCd);
+			menuMap.put("sentaku_gyosyu_cd", SysUserBean.getSelectedGyosyuCd());
+			String[] menu = mst000401_LogicBean.getCommonMenubar(db,menuMap);
+			Keepb.setMenuBar(menu);
+
+			//エラーチェック
+			List lst = new ArrayList();	//マスタ存在チェック抽出条件
+			mst000701_MasterInfoBean mstchk = new mst000701_MasterInfoBean();
+
+			//検索条件チェック-----------------------------------------------------------------------------
+
+			// 品種----------------------------------------
+			TreeMap map2 = new TreeMap(mst000401_LogicBean.getMsg());
+			if(!Keepb.getHinsyuCd().equals("")){
+				HinsyuCheck( db, Keepb, CtrlColor, sessionManager, map2, 0 );
+			} else {
+				Keepb.setHinsyuNa("");
+			}
+		}
+	}
+
+
+	/**
+	 *
+	 * 品種のチェックを行う。
+	 * @param		mst000101_DbmsBean db					: DBインスタンス
+	 * @param		mst790201_KeepBean Keepb 				: 画面情報
+	 * @param		Map 			   CtrlColor			: コントロール表示色
+	 * @param		SessionManager     sessionManager 		: SessionManager
+	 * @param		TreeMap            map					: メッセージ
+	 */
+
+	public void  HinsyuCheck( mst000101_DbmsBean db, mst790201_KeepBean Keepb, Map CtrlColor,
+								 SessionManager  sessionManager, TreeMap map, int flg ) throws Exception,SQLException {
+		String CtlName = "tx_hinsyu_cd";
+		String userLocal = ResorceUtil.getInstance().getPropertie("USER_LOCAL");
+
+		List lst = new ArrayList();
+		mst000701_MasterInfoBean mstchk = new mst000701_MasterInfoBean();
+
+		lst.add("	 SYUBETU_NO_CD = '" + MessageUtil.getMessage(mst000101_ConstDictionary.BUNRUI3, userLocal) + "'");				// 種別コード
+		lst.add("AND CODE_CD       = '" + Keepb.getHinsyuCd() + "'");							// 品種コード
+// 2006.01.25 Y.Inaba Mod ↓
+//		mstchk = mst000401_LogicBean.getMasterCdName(db,"R_NAMECTF","KANJI_RN", lst, mst000101_ConstDictionary.FUNCTION_PARAM_0);
+		mstchk = mst000401_LogicBean.getMasterCdName(db,"R_NAMECTF","KANJI_RN", lst, mst000101_ConstDictionary.FUNCTION_PARAM_0, "");
+// 2006.01.25 Y.Inaba Mod ↑
+		Keepb.setHinsyuNa(mstchk.getCdName());
+
+		if(!mstchk.getExistenceFlg().equals(mst000101_ConstDictionary.FUNCTION_TRUE)){
+
+			// 品種コード存在エラー
+			mst000401_LogicBean.setErrorBackColor(CtrlColor,CtlName);
+			if(Keepb.getErrorFlg().equals(mst000101_ConstDictionary.ERR_CHK_NORMAL)){
+				Keepb.setFirstFocus(CtlName);
+				Keepb.setErrorFlg(mst000101_ConstDictionary.ERR_CHK_ERROR);
+				Keepb.setErrorMessage("指定された品種コード" + map.get("40007").toString());
+			}
+
+		} else {
+
+			// 選択業種との関連チェック
+			if(!mst000401_LogicBean.getHinshuCdCheck(db,Keepb.getHinsyuCd(),sessionManager)){
+				mst000401_LogicBean.setErrorBackColor(CtrlColor,CtlName);
+				if(Keepb.getErrorFlg().equals(mst000101_ConstDictionary.ERR_CHK_NORMAL)){
+					Keepb.setFirstFocus(CtlName);
+					Keepb.setErrorFlg(mst000101_ConstDictionary.ERR_CHK_ERROR);
+					if( flg == 0){
+						Keepb.setErrorMessage(map.get("40023").toString());
+					} else {
+						Keepb.setErrorMessage("指定された品種コード" + map.get("40007").toString());
+					}
+				}
+			}
+		}
+	}
+}

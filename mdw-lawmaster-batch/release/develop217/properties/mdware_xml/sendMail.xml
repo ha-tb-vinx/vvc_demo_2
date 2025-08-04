@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+外部IFにて作成したファイルを添付してメールを送信する処理用の設定
+
+<ToAddress>
+	送信先設定用ノード
+
+	<Usable>
+		このToAddressタグの内容が使用可能ならtrue, 使用不可ならfalse
+
+	<Name>
+		未使用
+		
+	<Address>
+		送信先アドレス(複数設定可)
+
+	<CCAddress>
+		送信先アドレス(CC)(複数設定可)
+
+	<AttachFile>
+		添付ファイル(フルパス)
+		
+	<AttachFileToZip>
+		添付ファイル(フルパス)　Zip圧縮されて添付されます。
+
+<Mail>
+	メール内容ノード
+	
+	<CharSet>
+		キャラセット。 iso-2022-jp固定で。
+		
+	<SmtpProp>
+		SMTPプロパティ名。 mail.smtp.host固定で。
+
+	<SmtpServer>
+		SMTPサーバーアドレス。
+		
+	<Subject>
+		メール題名。
+		
+	<FromAddress>
+		Fromメールアドレス
+		
+	<FromName>
+		From名
+
+	<UserId>
+		認証用ユーザーID
+
+	<Password>
+		認証用パスワード
+
+	<Template>
+		メール本文
+-->
+<ErrorMail>
+	<ToAddress>
+		<Usable>true</Usable>
+		<Name>TTX</Name>
+		<Address>a.okada@mail.vinculum-japan.co.jp</Address>
+		<Address>t.yokoyama@mail.vinculum-japan.co.jp</Address>
+		<CCAddress>t.hattori@mail.vinculum-japan.co.jp</CCAddress>
+		<AttachFileToZip>D:/mdware/datas/test/メール送信用テストエクセル.xls</AttachFileToZip>
+		<AttachFileToZip>D:/mdware/datas/test/メール送信用テストテキスト.txt</AttachFileToZip>
+	</ToAddress>
+	<Mail>
+		<CharSet>iso-2022-jp</CharSet>
+		<SmtpProp>mail.smtp.host</SmtpProp>
+		<SmtpServer>128.62.23.243</SmtpServer>
+		<Subject>Subject(テスト用)</Subject>
+		<FromAddress>FromAddress@tesuto.jp</FromAddress>
+		<FromName>FromName(テスト用)</FromName>
+		<UserId>user</UserId>
+		<Password>user</Password>
+		<Template>
+---------------
+
+メール送信テスト
+
+---------------
+		</Template>
+	</Mail>
+</ErrorMail>

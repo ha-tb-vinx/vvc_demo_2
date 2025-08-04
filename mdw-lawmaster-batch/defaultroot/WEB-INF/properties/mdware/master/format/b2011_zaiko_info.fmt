@@ -1,0 +1,15 @@
+OPTIONS (ERRORS=100000000000)
+LOAD DATA
+INFILE 'F:/posfuldata/datas/share/collect/PFJ12T01.dat'
+BADFILE 'F:/posfuldata/datas/share/collect/PFJ12T01.bad'
+DISCARDFILE 'F:/posfuldata/datas/share/collect/PFJ12T01.rej'
+TRUNCATE
+INTO TABLE TMP_ZAIKO_INFO
+FIELDS TERMINATED BY X'09'
+(MENTE_KB,
+TENPO_CD,
+SYOHIN_CD,
+KEIJO_DT,
+HINSYU_CD,
+ZAIKO_SURYO_QT
+)

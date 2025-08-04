@@ -1,0 +1,61 @@
+//#SUB
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　コントロール値追加処理                                #
+//#　プログラムＩＤ　：　AppendSystemControl                                   #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.03.02                                            #
+//#                                                                            #
+//#　処理概要　：　コントロール値を指定テーブルに追加する                      #
+//#                (マスタ、スレーブ共読込済みとする)                          #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　追加先テーブル                                                  #
+//#　　%2　―　追加先集合ID                                                    #
+//#　　%3　―　サブシステムID                                                  #
+//#　　%4　―　パラメータID                                                    #
+//#                                                                            #
+//#　コメント　：　                                                            #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.03.02  田中       新規作成                                   #
+//##############################################################################
+
+//##############################################################################
+$echo ■ＳＵＢ１．初期処理
+//##############################################################################
+$ParaSet("%APPEND_TABLE",%1)
+$ParaSet("%APPEND_CUR",%2)
+$ParaSet("%SUBSYS_ID",%3)
+$ParaSet("%PARAM_ID",%4)
+
+//##############################################################################
+$echo ■ＳＵＢ２．本処理
+//##############################################################################
+//#結合キーを列を追加
+$AddRealColumn("%APPEND_TABLE","[RecNo]","JOINT_KEY","String")
+//#項目追加先テーブルに結合キーを追加
+$Calc("%APPEND_TABLE","JOINT_KEY","1","*","$""%PARAM_ID""","%APPEND_CUR")
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = '%SUBSYS_ID' AND ""PARAMETER_ID"" = '%PARAM_ID'")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$AddRealColumn("SYSTEM_CONTROL","[RecNo]","JOINT_KEY","String")
+$Calc("SYSTEM_CONTROL","JOINT_KEY","1","*","$""%PARAM_ID""","%MAIN_TARGET_CUR")
+
+//#結合
+$CreateJoin("%APPEND_TABLE_JOIN","%APPEND_TABLE","SYSTEM_CONTROL","%APPEND_CUR","%MAIN_TARGET_CUR","=BEGIN=","JOINT_KEY","=END=","=BEGIN=","JOINT_KEY","=END=","INNER")
+$ColumnTransfer("%APPEND_TABLE_JOIN","PARAMETER_TX")
+
+//##############################################################################
+$echo ■ＳＵＢ３．終了処理
+//##############################################################################
+$Drop("%APPEND_TABLE_JOIN")
+$DelColumn("%APPEND_TABLE","JOINT_KEY")
+$DelColumn("SYSTEM_CONTROL","JOINT_KEY")
+$RenameColumn("%APPEND_TABLE","PARAMETER_TX","%PARAM_ID")
+$CursorDelete("SYSTEM_CONTROL","%MAIN_TARGET_CUR")
+

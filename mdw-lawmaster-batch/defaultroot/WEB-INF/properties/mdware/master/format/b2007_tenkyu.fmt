@@ -1,0 +1,15 @@
+OPTIONS (ERRORS=100000000000,DIRECT=TRUE)
+LOAD DATA
+INFILE 'F:/posfuldata/datas/share/master/PFM07T01.dat'
+BADFILE 'F:/posfuldata/datas/share/master/PFM07T01.bad'
+DISCARDFILE 'F:/posfuldata/datas/share/master/PFM07T01.rej'
+TRUNCATE
+INTO TABLE TMP_TENKYU
+FIELDS TERMINATED BY X'09'
+(
+TENPO_CD,
+SYOKUHIN_KB,
+EIGYO_DT,
+EIGYO_KB,
+RENDO_DT
+)

@@ -1,0 +1,57 @@
+REM  ===BACKUP初期設定===
+set  BATCHF_HOME=@filter.dbbackup.batchfHome.value@
+set  LOG_HOME=@filter.dbbackup.logHome@
+set  LOG_PATH=@filter.dbbackup.logPath@
+
+REM  ===Oracle基本情報===
+set  ORACLE_SID=@filter.dbbackup.oracleSid@
+set  SYS_USER=@filter.dbbackup.sysUser@
+set  SYS_PASSWD=@filter.dbbackup.sysPass@
+set  PORTAL_USER=@filter.dbbackup.portalUser@
+set  PORTAL_PASSWD=@filter.dbbackup.portalPass@
+set  JISEKI_USER=@filter.dbbackup.jisekiUser@
+set  JISEKI_PASSWD=@filter.dbbackup.jisekiPass@
+set  AUTO_USER=@filter.dbbackup.autoUser@
+set  AUTO_PASSWD=@filter.dbbackup.autoPass@
+set  ORA_SERVICE=@filter.dbbackup.oraService@
+set  ORA_LISTENER=@filter.dbbackup.oraListener@
+set  ORACLE_BASE=@filter.dbbackup.oraBase@
+set  ORACLE_HOME=@filter.dbbackup.oraHome@
+
+REM  ===アーカイブログ===
+set  ORARC_HOME=@filter.dbbackup.orarcHome@
+REM  ===リスナーログ===
+set  ORANET_HOME=@filter.dbbackup.oranetHome@
+set  LISTENERLOG=@filter.dbbackup.listenerLog@
+REM  ===アラートログ===
+set  ORALART_HOME=@filter.dbbackup.oralartHome@
+set  ALARTLOG=@filter.dbbackup.alartLog@
+REM  ===論理バックアップファイルコピー===
+set  DMP_DIR=@filter.dbbackup.dmpDir@
+
+REM  ==アーカイブログの保持期間（日）==
+set  ORARC_EXPIRE=@filter.dbbackup.orarcExpire@
+REM  ==リスナーログの保持期間（日）==
+set  ORANET_EXPIRE=@filter.dbbackup.oranetExpire@
+REM  ==アラートログの保持期間（日）==
+set  ORALART_EXPIRE=@filter.dbbackup.oralartExpire@
+REM  ==ダンプファイルの保持期間（日）==
+set  DMP_EXPIRE=@filter.dbbackup.dmpExpire@
+REM  ==バッチログの保持期間（日）==
+set  LOG_EXPIRE=@filter.dbbackup.logExpire@
+
+REM  ===Redoログ===
+set  ACTIVE_CDRV=@filter.dbbackup.activeCdrv@
+set  STANDBY_CDRV=@filter.dbbackup.standbyCdrv@
+REM  ===アーカイブログ、制御ファイルのコピー===
+set  ACTIVE_DDRV=@filter.dbbackup.activeDdrv@
+set  STANDBY_DDRV=@filter.dbbackup.stanbyDdrv@
+REM  ===spfile,pfile,pwdfileのコピー===
+set  ACTIVE_DDRV2=@filter.dbbackup.activeDdrv2@
+set  STANDBY_DDRV2=@filter.dbbackup.standbyDdrv2@
+REM  ===データファイル（テーブル）のコピー===
+set  ACTIVE_TABLE=@filter.dbbackup.activeTable@
+set  STANDBY_TABLE=@filter.dbbackup.standbyTable@
+REM  ===データファイル（インデックス）のコピー===
+set  ACTIVE_INDEX=@filter.dbbackup.activeIndex@
+set  STANDBY_INDEX=@filter.dbbackup.standbyIndex@

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/activation.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/AlarmCustApi.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/jt400.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/log4j-1.2.7.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/mail.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/ojdbc14.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/svf.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/tools.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/utils.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/commons-net-1.4.1.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/commons-io-1.4.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/jcifs-1.3.12.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/ant.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/mdw-lawstccommons.jar"/>
+	<classpathentry kind="var" path="TOMCAT_HOME/lib/servlet-api.jar"/>
+	<classpathentry kind="var" path="TOMCAT_HOME/lib/jasper.jar"/>
+	<classpathentry kind="var" path="TOMCAT_HOME/lib/jsp-api.jar"/>
+	<classpathentry kind="var" path="TOMCAT_HOME/lib/el-api.jar"/>
+	<classpathentry kind="var" path="TOMCAT_HOME/lib/annotations-api.jar"/>
+	<classpathentry kind="lib" path="C:/apache-tomcat-6.0.35/lib/jsp-api.jar"/>
+	<classpathentry kind="lib" path="C:/apache-tomcat-6.0.35/lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/mdw-languageUtil-1.0.4.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/mdw-mkpdf-1.0.0.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/mdw-lawcommons-1.0.6.jar"/>
+	<classpathentry kind="lib" path="defaultroot/WEB-INF/lib/commons-lang-2.1.jar"/>
+	<classpathentry kind="output" path="defaultroot/WEB-INF/classes"/>
+</classpath>

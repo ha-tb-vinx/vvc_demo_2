@@ -1,0 +1,576 @@
+<!-- Copyright (c) 2002 by ObjectLearn. All Rights Reserved. -->
+<project name="jar-module-builder" default="development-package" basedir=".">
+
+	<!-- set global properties for this build -->
+	<property name="src.dir" value="../src" />
+	<property name="batch.dir" value="../batch" />
+	<property name="lib.dir" value="../batch/lib" />
+	<property name="target.dir" value="../target" />
+	<property name="build.dir" value="../target/classes" />
+
+	<!-- javaファイルコンパイル -->
+	<target name="compile">
+
+		<echo message="Ant Version = ${ant.version}"/>
+		<echo message="JRE Version = ${java.specification.version}"/>
+
+		<delete dir="${target.dir}" failonerror="false" />
+		<mkdir dir="${target.dir}" />
+		<mkdir dir="${target.dir}/classes" />
+
+		<javac srcdir="${src.dir}" encoding="UTF-8" destdir="${build.dir}" source="1.6" target="1.6"  includeantruntime="false">
+			<classpath>
+				<fileset dir="${lib.dir}">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
+
+	</target>
+
+	<!-- 開発環境パッケージング -->
+	<target name="development-package" depends="compile">
+
+		<property file="filters/development.properties" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/development.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/development.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/development.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/development.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- 結合環境パッケージング -->
+	<target name="integration-package" depends="compile">
+
+		<property file="filters/integration.properties" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/integration.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/integration.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/integration.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/integration.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- 本番環境パッケージング -->
+	<target name="production-package" depends="compile">
+
+		<property file="filters/production.properties" />
+
+		<!-- 環境別ディレクトリ -->
+		<property name="env.dir" value="/01-test-mkv/uriage" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/production.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}${env.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}${env.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}${env.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- 本番機honban環境用フィルター -->
+	<target name="production-honban-package" depends="compile">
+
+		<property file="filters/production_honban.properties" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/production_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- 開発UAT環境用フィルター -->
+	<target name="production-uat-package" depends="compile">
+
+		<property file="filters/production-uat.properties" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/production-uat.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production-uat.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production-uat.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production-uat.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- 本番UAT環境用フィルター -->
+	<target name="production_uat_honban-package" depends="compile">
+
+		<property file="filters/production_uat_honban.properties" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/production_uat_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_uat_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_uat_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/production_uat_honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- MKVテスト環境パッケージング -->
+	<target name="mkv-tkotest-package" depends="compile">
+
+		<property file="filters/mkv-tkotest.properties" />
+
+		<!-- 環境別ディレクトリ -->
+		<property name="env.dir" value="/01-test-mkv/uriage" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/mkv-tkotest.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}${env.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-tkotest.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-tkotest.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-tkotest.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}${env.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}${env.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- MKV本番環境パッケージング -->
+	<target name="mkv-honban-package" depends="compile">
+
+		<property file="filters/mkv-honban.properties" />
+
+		<!-- 環境別ディレクトリ -->
+		<property name="env.dir" value="/10-honban-mkv/uriage" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/mkv-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}${env.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkv-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}${env.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}${env.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- MKH本番環境パッケージング -->
+	<target name="mkh-honban-package" depends="compile">
+
+		<property file="filters/mkh-honban.properties" />
+
+		<!-- 環境別ディレクトリ -->
+		<property name="env.dir" value="/10-honban-mkh/uriage" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/mkh-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}${env.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-honban.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}${env.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}${env.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+	<!-- MKHテスト環境パッケージング -->
+	<target name="mkh-test-package" depends="compile">
+
+		<property file="filters/mkh-test.properties" />
+
+		<!-- 環境別ディレクトリ -->
+		<property name="env.dir" value="/02-test-mkh/uriage" />
+
+		<!-- batchフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/batch" encoding="UTF-8">
+			<fileset dir="${batch.dir}">
+				<include name="**/*.*" />
+				<exclude name="propertie.location" />
+				<exclude name="lib/*.*"/>
+				<exclude name="classes/**/*.*"/>
+				<exclude name="**/*.filter" />
+			</fileset>
+			<filterset>
+				<filtersfile file="filters/mkh-test.properties" />
+			</filterset>
+		</copy>
+
+		<!-- properties.locationフィルタ -->
+		<copy file="${batch.dir}/propertie.location" tofile="${target.dir}${env.dir}/propertie.location" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-test.properties" />
+			</filterset>
+		</copy>
+
+		<!-- database.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/database.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/database.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-test.properties" />
+			</filterset>
+		</copy>
+
+		<!-- stcliblog4j.propertiesフィルタ -->
+		<copy file="${batch.dir}/properties/stcliblog4j.properties.filter" tofile="${target.dir}${env.dir}/batch/properties/stcliblog4j.properties" overwrite="yes" encoding="UTF-8">
+			<filterset>
+				<filtersfile file="filters/mkh-test.properties" />
+			</filterset>
+		</copy>
+
+		<!-- libフォルダコピー -->
+		<copy todir="${target.dir}${env.dir}/lib" encoding="UTF-8">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<delete file="${target.dir}${env.dir}/${artifactId}.jar" failonerror="false" />
+		<jar jarfile="${target.dir}${env.dir}/${artifactId}.jar" basedir="${build.dir}" />
+		<delete dir="${build.dir}" failonerror="false" />
+
+	</target>
+
+</project>

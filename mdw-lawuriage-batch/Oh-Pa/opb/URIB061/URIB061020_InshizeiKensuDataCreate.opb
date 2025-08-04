@@ -1,0 +1,233 @@
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　印紙税件数カウント処理                                #
+//#　ジョブＩＤ　　　：　URIB061020                                            #
+//#　プログラムＩＤ　：　InshizeiKensuCount                                    #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.05.07                                            #
+//#                                                                            #
+//#　処理概要　：　印紙税件数カウント処理                                      #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　Commonファイルパス                                              #
+//#　　%2　―　マクロファイルパス                                              #
+//#　　%3　―　D5Tファイルパス                                                 #
+//#　　%4　―　CSVファイルパス                                                 #
+//#　　%5　―　カタログファイルパス                                            #
+//#　　%6　―　法人コードパス                                                  #
+//#　　%7　―　出力パス                                                        #
+//#　コメント　：　(前提条件)                                                  #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.05.07  松本       新規作成                                   #
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#　　V1.2  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #
+//#　　V1.4  2009.10.28  VJC.福永   取引番号でサマリ後対象判定を行う           #
+//##############################################################################
+
+
+//##########################################################################
+$echo ■クリア
+//##########################################################################
+$ClearWS()
+$ParaAllClear()
+
+//##########################################################################
+$echo ■パラメーターセット
+//##########################################################################
+//#Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+//#マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+//#D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+//#CSVパス
+$ParaSet("%CSV_PATH",%4)
+//#カタログパス
+$ParaSet("%CTLG_PATH",%5)
+//#法人コード
+$ParaSet("%HOJIN_CD",%6)
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#出力パス
+$ParaSet("%OUT_PATH",%7)
+//#ファンクションID
+$ParaSet("%FUNC_ID","URIB_061020")
+
+//#システムコントロールマスタ取得用
+$ParaSet("%SUBSYSTEM_ID","URIAGE")
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #(URIB061020⇒INSHIZEI_TAISYO_VL)
+$ParaSet("%PARAMETER_ID","INSHIZEI_TAISYO_VL")
+//#　　V1.2  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+$ParaSet("%BATCH_DT","BATCH_DT")
+
+//##########################################################################
+$echo ■開始ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061020 印紙税件数カウント処理 処理を開始します","=END=")
+
+
+//##########################################################################
+$echo ■テーブルファイルをロード
+//##########################################################################
+$Load("%D5T_PATH","SYSTEM_CONTROL")
+$Load("%D5T_PATH","DICTIONARY_CONTROL")
+$Load("%D5T_PATH","R_TENPO")
+$Load("%D5T_PATH","WK_TANPIN_MEI")
+
+
+//##########################################################################
+$echo ■システムコントロールマスタからバッチ日付を取得
+//##########################################################################
+//#　　V1.2  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = '%SUBSYSTEM_ID' AND ""PARAMETER_ID"" = '%BATCH_DT'")
+$ParaSet("%SYSTEM_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%SYSTEM_TARGET_CUR","売上計上日")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_TENPO","SYSTEM_CONTROL","1","%SYSTEM_TARGET_CUR","PARAMETER_TX","=END=")
+
+
+//##########################################################################
+$echo ■システムディクショナリマスタのパラメータを取得
+//##########################################################################
+//#システムコントロールマスタの取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = '%SUBSYSTEM_ID' AND ""PARAMETER_ID"" = '%PARAMETER_ID'")
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #(%TMP_TARGET_CUR⇒%SYS_TARGET_CUR)
+$ParaSet("%SYS_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%SYS_TARGET_CUR","サブクエリ1")
+
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #
+//#システムディクショナリマスタの取得
+
+
+//##########################################################################
+$echo ■新単品明細ログワークを取得
+//##########################################################################
+//# ADD 2009.10.28 VJC.Fukunaga Start 以降すべて　WK_TANPIN_MEI⇒WK_TANPIN_MEI_SUMを利用に修正
+//#取引番号でサマリ
+$XSUMNumeric("WK_TANPIN_MEI_SUM","WK_TANPIN_MEI","1","=BEGIN=","COMP_CD","TORIHIKI_TS","TENPO_CD","TERMINAL_NB","TOROHIKI_NB","TORIKESHI_FG","=END=","=BEGIN=","URIAGE_KOMI_VL","0","0","0","-1","1","13","0","0","0","0","NEBIKI_VL","0","0","0","-1","1","13","0","0","0","0","SET_NEBIKI_VL","0","0","0","-1","1","10","0","0","0","0","MIX_MATCH_NEBIKI_VL","0","0","0","-1","1","13","0","0","0","0","=END=")
+//# ADD 2009.10.28 VJC.Fukunaga End
+
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #(ディクショナリ⇒システムコントロール)
+//#システムコントロールマスタのパラメータを取得
+//#　　V1.3  2009.07.10  VJC.福永   %PARAMETER_ID 取得方法の修正               #(%TMP_TARGET_CUR⇒%SYS_TARGET_CUR)(DICTIONARY_CONTROL⇒SYSTEM_CONTROL)
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI_SUM","SYSTEM_CONTROL","1","%SYS_TARGET_CUR","PARAMETER_TX","=END=")
+$TypeConv("WK_TANPIN_MEI_SUM","PARAMETER_TX","Numeric(13,0)")
+
+//#売上金額（税込） - 値引金額を計算
+//# UPD 2009.10.28 VJC.Fukunaga Start 金額計算修正
+//#$Calc("WK_TANPIN_MEI","URIAGE_KOMI_VL","1","*","-(NVL(@URIAGE_KOMI_VL,0),NVL(@NEBIKI_VL,0))","1")
+$Calc("WK_TANPIN_MEI_SUM","SUM<URIAGE_KOMI_VL>","1","*","+(+(+(NVL(@SUM<URIAGE_KOMI_VL>,0),NVL(@SUM<NEBIKI_VL>,0)),NVL(@SUM<SET_NEBIKI_VL>,0)),NVL(@SUM<MIX_MATCH_NEBIKI_VL>,0))","1")
+//# UPD 2009.10.28 VJC.Fukunaga End
+
+//#カウント対象を抽出
+$MultiSearch("WK_TANPIN_MEI_SUM","1","""COMP_CD"" = '%HOJIN_CD' AND  ""TORIKESHI_FG"" != '1' AND ""SUM<URIAGE_KOMI_VL>"" >= ""PARAMETER_TX_#1""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI_SUM","%TMP_TARGET_CUR","抽出条件で絞り込み")
+
+//#店舗マスタの有効レコードを取得
+//#$MultiSearch("R_TENPO","1","""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""HEITEN_DT"" >= ""PARAMETER_TX"" AND ""HOJIN_CD"" = '%HOJIN_CD'")
+$MultiSearch("R_TENPO","1","""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""HOJIN_CD"" = '%HOJIN_CD'")
+$ParaSet("%TENPO_TARGET_CUR","__SID")
+$SetComment("R_TENPO","%TENPO_TARGET_CUR","店舗マスタ")
+
+//#店舗マスタと結合
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI_SUM","R_TENPO","%TMP_TARGET_CUR","%TENPO_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","HOJIN_CD","TENPO_CD","=END=","INNER")
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL","__SID")
+$ExtCursor("WK_TANPIN_MEI_REAL","WK_TANPIN_MEI_SUM","%ERR_TBL","N","=BEGIN=","COMP_CD","TENPO_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_REAL","TENPO_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_REAL","TABLE","1","*","WK_TANPIN_MEI_SUM","1")
+$AddRealColumn("WK_TANPIN_MEI_REAL","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_REAL","MESSAGE","1","*","店舗コードが店舗マスタに存在しません","1")
+
+$ParaSet("%ERR_TBL","WK_TANPIN_MEI_REAL")
+
+//# レコード有り無しを判定するために法人コードの最大値を取る(０件なら取得レコード無し)
+$XSUMNumeric("PARAM","%ERR_TBL","1","=BEGIN=","=END=","=BEGIN=","COMP_CD","0","1","0","-1","0","0","0","0","0","0","=END=")
+//# テーブル名
+$AddRealColumn("PARAM","[RecNo]","PARAM1","String")
+$Fill("PARAM","PARAM1","1","*","%ERR_TBL","1")
+//# 保存ファイル名
+$AddRealColumn("PARAM","PARAM1","PARAM2","String")
+$Calc("PARAM","PARAM2","1","*","$&($&($&($""%FUNC_ID"",$""ErrLog_""),$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))),$"".csv"")","1")
+
+//# LOGパス
+$AddRealColumn("PARAM","PARAM2","PARAM3","String")
+$Fill("PARAM","PARAM3","1","*","%CSV_PATH","1")
+//#パラメータ用CSV出力
+$TxtWriteEx("PARAM","CSV","%COMMON_PATH","LOG_PARAM.prm","1","*","=BEGIN=","PARAM1","PARAM2","PARAM3","=END=","N","1")
+
+//# サブマクロを呼び出してログ出力のループ処理(０回or１回)を実行
+$MultiSubExec("%COMMON_PATH","ErrorLogWrite.opb","LOG_PARAM.prm")
+
+//#$TxtWriteEx("%TBL_NAME","CSV","%CSV_PATH","%FILE_NAME","1","*","=BEGIN=","*","=END=","Y","1")
+$Drop("%ERR_TBL")
+$Drop("PARAM")
+//# -----------------------------------------------------
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI_SUM","%TMP_TARGET_CUR","サブクエリ2")
+
+
+//##########################################################################
+$echo ■計上日を設定
+//##########################################################################
+//#バッチ日付を取得
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI_SUM","SYSTEM_CONTROL","1","%SYSTEM_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#時分秒が"99"の差分ファイルのレコードを取得
+$DuplColumn("WK_TANPIN_MEI_SUM","TORIHIKI_TS")
+$Calc("WK_TANPIN_MEI_SUM","TORIHIKI_TS_#1","1","*","$Extract($@TORIHIKI_TS_#1,8,6)","%TMP_TARGET_CUR")
+$MultiSearch("WK_TANPIN_MEI_SUM","%TMP_TARGET_CUR","""TORIHIKI_TS_#1"" = '999999'")
+$ParaSet("%SABUN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI_SUM","%SABUN_TARGET_CUR","差分ファイル")
+
+//#差分ファイルは取引日時最小、以外はバッチ日付をセット
+$XSUMNumeric("WK_TANPIN_MEI_SABUN_MIN","WK_TANPIN_MEI_SUM","%SABUN_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","TORIHIKI_TS","0","0","1","-1","0","0","0","0","0","0","=END=")
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI_SUM","WK_TANPIN_MEI_SABUN_MIN","%SABUN_TARGET_CUR","1","=BEGIN=","TENPO_CD","=END=","=BEGIN=","TENPO_CD","=END=","INNER")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","MIN<TORIHIKI_TS>")
+$Drop("WK_TANPIN_MEI_JOIN")
+$Calc("WK_TANPIN_MEI_SUM","PARAMETER_TX_#2","1","*","$@MIN<TORIHIKI_TS>","%SABUN_TARGET_CUR")
+$DelColumn("WK_TANPIN_MEI_SUM","MIN<TORIHIKI_TS>")
+$Calc("WK_TANPIN_MEI_SUM","PARAMETER_TX_#2","1","*","$Extract($@PARAMETER_TX_#2,0,8)","%SABUN_TARGET_CUR")
+
+//#サブクエリ2を集約
+$XSUMNumeric("WK_TANPIN_MEI_SUB2","WK_TANPIN_MEI_SUM","%TMP_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","PARAMETER_TX_#2","=END=","=BEGIN=","COMP_CD","1","0","0","-1","0","0","0","0","0","0","=END=")
+
+
+//##########################################################################
+$echo ■CSVを作成
+//##########################################################################
+//#項目を追加
+$AddRealColumn("WK_TANPIN_MEI_SUB2","N<COMP_CD>","INSERT_USER_ID","String")
+$AddRealColumn("WK_TANPIN_MEI_SUB2","INSERT_USER_ID","INSERT_TS","String")
+$AddRealColumn("WK_TANPIN_MEI_SUB2","INSERT_TS","UPDATE_USER_ID","String")
+$AddRealColumn("WK_TANPIN_MEI_SUB2","UPDATE_USER_ID","UPDATE_TS","String")
+
+//#更新日時
+$Calc("WK_TANPIN_MEI_SUB2","INSERT_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","1")
+$Calc("WK_TANPIN_MEI_SUB2","INSERT_USER_ID","1","*","$""URIB061""","1")
+$Calc("WK_TANPIN_MEI_SUB2","UPDATE_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","1")
+$Calc("WK_TANPIN_MEI_SUB2","UPDATE_USER_ID","1","*","$""URIB061""","1")
+
+//#CSVを出力
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+$TxtWriteEx("WK_TANPIN_MEI_SUB2","CSV","%OUT_PATH","IF_DT_INSHIZEI_TAISYO.csv","1","*","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","N<COMP_CD>","INSERT_USER_ID","INSERT_TS","UPDATE_USER_ID","UPDATE_TS","=END=","N","1")
+
+//##########################################################################
+$echo ■終了ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061020 印紙税件数カウント処理 処理を終了します","=END=")

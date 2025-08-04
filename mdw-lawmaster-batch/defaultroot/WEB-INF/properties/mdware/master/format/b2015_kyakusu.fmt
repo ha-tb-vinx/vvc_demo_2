@@ -1,0 +1,15 @@
+OPTIONS (ERRORS=100000000000,DIRECT=TRUE)
+LOAD DATA
+INFILE 'F:/posfuldata/datas/share/collect/kyakusu.dat'
+BADFILE 'F:/posfuldata/datas/share/collect/kyakusu.bad'
+DISCARDFILE 'F:/posfuldata/datas/share/collect/kyakusu.rej'
+TRUNCATE
+INTO TABLE TMP_KYAKUSU
+FIELDS TERMINATED BY X'09'
+(
+TENPO_CD ,
+TORIHIKI_DT,
+URIAGE_VL,
+URIAGE_QT,
+KYAKUSU_QT
+)

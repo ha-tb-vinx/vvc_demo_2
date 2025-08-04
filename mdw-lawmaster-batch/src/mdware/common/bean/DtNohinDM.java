@@ -1,0 +1,4140 @@
+package mdware.common.bean;
+
+import java.sql.*;
+import java.util.*;
+import jp.co.vinculumjapan.stc.util.db.*;
+
+/** * <p>タイトル: </p>
+ * <p>説明: </p>
+ * <p>著作権: Copyright (c) 2002</p>
+ * <p>会社名: </p>
+ * @author DataModule Creator(2004.07.12) Version 1.0.rbsite
+ * @version X.X (Create time: 2005/1/9 16:4:52)
+ */
+public class DtNohinDM extends DataModule
+{
+	/**
+	 * コンストラクタ
+	 */
+	public DtNohinDM()
+	{
+		super( "rbsite_ora");
+	}
+	/**
+	 * 検索後にＢＥＡＮをインスタンス化する所。
+	 * 検索した結果セットをＢＥＡＮとして持ち直す。
+	 * DataModuleから呼び出され返したObjectをListに追加する。
+	 * @param rest ResultSet
+	 * @return Object インスタンス化されたＢＥＡＮ
+	 */
+	protected Object instanceBean( ResultSet rest )
+		throws SQLException
+	{
+		DtNohinBean bean = new DtNohinBean();
+		bean.setDataDenpNb( rest.getString("data_denp_nb") );
+		bean.setFileHeadNb( rest.getString("file_head_nb") );
+		bean.setGaitoSystemKb( rest.getString("gaito_system_kb") );
+		bean.setTenpoCd( rest.getString("tenpo_cd") );
+		bean.setTenhankuCd( rest.getString("tenhanku_cd") );
+		bean.setLGyosyuCd( rest.getString("l_gyosyu_cd") );
+		bean.setSGyosyuCd( rest.getString("s_gyosyu_cd") );
+		bean.setLHankuCd( rest.getString("l_hanku_cd") );
+		bean.setTorihikisakiCd( rest.getString("torihikisaki_cd") );
+		bean.setNohinDt( rest.getString("nohin_dt") );
+		bean.setDenpyoNb( rest.getString("denpyo_nb") );
+		bean.setHachuDt( rest.getString("hachu_dt") );
+		bean.setKbBusyoKb( rest.getString("kb_busyo_kb") );
+		bean.setBinNb( rest.getString("bin_nb") );
+		bean.setTenpoNa( rest.getString("tenpo_na") );
+		bean.setTenpoKa( rest.getString("tenpo_ka") );
+		bean.setTenhankuNa( rest.getString("tenhanku_na") );
+		bean.setSGyosyuNa( rest.getString("s_gyosyu_na") );
+		bean.setTorihikisakiNa( rest.getString("torihikisaki_na") );
+		bean.setTorihikisakiKa( rest.getString("torihikisaki_ka") );
+		bean.setGenkaKeiVl( rest.getLong("genka_kei_vl") );
+		bean.setBaikaKeiVl( rest.getLong("baika_kei_vl") );
+		bean.setTeiGenkaKeiVl( rest.getLong("tei_genka_kei_vl") );
+		bean.setTeiBaikaKeiVl( rest.getLong("tei_baika_kei_vl") );
+		bean.setTeiFg( rest.getString("tei_fg") );
+		bean.setTeiseiRuyuKb( rest.getString("teisei_ruyu_kb") );
+		bean.setSeisenFg( rest.getString("seisen_fg") );
+		bean.setKbSobaKb( rest.getString("kb_soba_kb") );
+		bean.setHaisoKb( rest.getString("haiso_kb") );
+		bean.setDenpyoKb( rest.getString("denpyo_kb") );
+		bean.setZeiKb( rest.getString("zei_kb") );
+		bean.setHachuKb( rest.getString("hachu_kb") );
+		bean.setTenpoHachuKb( rest.getString("tenpo_hachu_kb") );
+		bean.setIkatuDenpFg( rest.getString("ikatu_denp_fg") );
+		bean.setSyohinThemeNa( rest.getString("syohin_theme_na") );
+		bean.setHaisosakiCd( rest.getString("haisosaki_cd") );
+		bean.setHaisosakiNa( rest.getString("haisosaki_na") );
+		bean.setNohinCenterCd( rest.getString("nohin_center_cd") );
+		bean.setKeiyuCenterCd( rest.getString("keiyu_center_cd") );
+		bean.setTenhaiCenterCd( rest.getString("tenhai_center_cd") );
+		bean.setZaikoCenterCd( rest.getString("zaiko_center_cd") );
+		bean.setNohinSyoriKb( rest.getString("nohin_syori_kb") );
+		bean.setNohinListQt( rest.getLong("nohin_list_qt") );
+		bean.setHaisinsakiCd( rest.getString("haisinsaki_cd") );
+		bean.setHojinCd( rest.getString("hojin_cd") );
+		bean.setHojinNa( rest.getString("hojin_na") );
+		bean.setKakuteiFg( rest.getString("kakutei_fg") );
+		bean.setKakuteiUserId( rest.getString("kakutei_user_id") );
+		bean.setKakuteiTs( rest.getString("kakutei_ts") );
+		bean.setKeijoDt( rest.getString("keijo_dt") );
+		bean.setKeijoMakeFg( rest.getString("keijo_make_fg") );
+		bean.setKeijoMakeDt( rest.getString("keijo_make_dt") );
+		bean.setJuryoMakeFg( rest.getString("juryo_make_fg") );
+		bean.setJuryoMakeDt( rest.getString("juryo_make_dt") );
+		bean.setNohinAsnMakeFg( rest.getString("nohin_asn_make_fg") );
+		bean.setNohinAsnMakeDt( rest.getString("nohin_asn_make_dt") );
+		bean.setRiyoUserId( rest.getString("riyo_user_id") );
+		bean.setInsertTs( rest.getString("insert_ts") );
+		bean.setUpdateTs( rest.getString("update_ts") );
+		bean.setCreateDatabase();
+		return bean;
+	}
+
+	/**
+	 * 検索用ＳＱＬの生成を行う。
+	 * 渡されたMapを元にWHERE区を作成する。
+	 * @param map Map
+	 * @return String 生成されたＳＱＬ
+	 */
+	public String getSelectSql( Map map )
+	{
+		DBStringConvert conv = DBStringConvert.getDBStringConvert( getDatabaseProductName() );
+		String whereStr = "where ";
+		String andStr = " and ";
+		StringBuffer sb = new StringBuffer();
+		sb.append("select ");
+		sb.append("data_denp_nb ");
+		sb.append(", ");
+		sb.append("file_head_nb ");
+		sb.append(", ");
+		sb.append("gaito_system_kb ");
+		sb.append(", ");
+		sb.append("tenpo_cd ");
+		sb.append(", ");
+		sb.append("tenhanku_cd ");
+		sb.append(", ");
+		sb.append("l_gyosyu_cd ");
+		sb.append(", ");
+		sb.append("s_gyosyu_cd ");
+		sb.append(", ");
+		sb.append("l_hanku_cd ");
+		sb.append(", ");
+		sb.append("torihikisaki_cd ");
+		sb.append(", ");
+		sb.append("nohin_dt ");
+		sb.append(", ");
+		sb.append("denpyo_nb ");
+		sb.append(", ");
+		sb.append("hachu_dt ");
+		sb.append(", ");
+		sb.append("kb_busyo_kb ");
+		sb.append(", ");
+		sb.append("bin_nb ");
+		sb.append(", ");
+		sb.append("tenpo_na ");
+		sb.append(", ");
+		sb.append("tenpo_ka ");
+		sb.append(", ");
+		sb.append("tenhanku_na ");
+		sb.append(", ");
+		sb.append("s_gyosyu_na ");
+		sb.append(", ");
+		sb.append("torihikisaki_na ");
+		sb.append(", ");
+		sb.append("torihikisaki_ka ");
+		sb.append(", ");
+		sb.append("genka_kei_vl ");
+		sb.append(", ");
+		sb.append("baika_kei_vl ");
+		sb.append(", ");
+		sb.append("tei_genka_kei_vl ");
+		sb.append(", ");
+		sb.append("tei_baika_kei_vl ");
+		sb.append(", ");
+		sb.append("tei_fg ");
+		sb.append(", ");
+		sb.append("teisei_ruyu_kb ");
+		sb.append(", ");
+		sb.append("seisen_fg ");
+		sb.append(", ");
+		sb.append("kb_soba_kb ");
+		sb.append(", ");
+		sb.append("haiso_kb ");
+		sb.append(", ");
+		sb.append("denpyo_kb ");
+		sb.append(", ");
+		sb.append("zei_kb ");
+		sb.append(", ");
+		sb.append("hachu_kb ");
+		sb.append(", ");
+		sb.append("tenpo_hachu_kb ");
+		sb.append(", ");
+		sb.append("ikatu_denp_fg ");
+		sb.append(", ");
+		sb.append("syohin_theme_na ");
+		sb.append(", ");
+		sb.append("haisosaki_cd ");
+		sb.append(", ");
+		sb.append("haisosaki_na ");
+		sb.append(", ");
+		sb.append("nohin_center_cd ");
+		sb.append(", ");
+		sb.append("keiyu_center_cd ");
+		sb.append(", ");
+		sb.append("tenhai_center_cd ");
+		sb.append(", ");
+		sb.append("zaiko_center_cd ");
+		sb.append(", ");
+		sb.append("nohin_syori_kb ");
+		sb.append(", ");
+		sb.append("nohin_list_qt ");
+		sb.append(", ");
+		sb.append("haisinsaki_cd ");
+		sb.append(", ");
+		sb.append("hojin_cd ");
+		sb.append(", ");
+		sb.append("hojin_na ");
+		sb.append(", ");
+		sb.append("kakutei_fg ");
+		sb.append(", ");
+		sb.append("kakutei_user_id ");
+		sb.append(", ");
+		sb.append("kakutei_ts ");
+		sb.append(", ");
+		sb.append("keijo_dt ");
+		sb.append(", ");
+		sb.append("keijo_make_fg ");
+		sb.append(", ");
+		sb.append("keijo_make_dt ");
+		sb.append(", ");
+		sb.append("juryo_make_fg ");
+		sb.append(", ");
+		sb.append("juryo_make_dt ");
+		sb.append(", ");
+		sb.append("nohin_asn_make_fg ");
+		sb.append(", ");
+		sb.append("nohin_asn_make_dt ");
+		sb.append(", ");
+		sb.append("riyo_user_id ");
+		sb.append(", ");
+		sb.append("insert_ts ");
+		sb.append(", ");
+		sb.append("update_ts ");
+		sb.append("from dt_nohin ");
+
+
+		// data_denp_nb に対するWHERE区
+		if( map.get("data_denp_nb_bef") != null && ((String)map.get("data_denp_nb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb >= '" + conv.convertWhereString( (String)map.get("data_denp_nb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_aft") != null && ((String)map.get("data_denp_nb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb <= '" + conv.convertWhereString( (String)map.get("data_denp_nb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb") != null && ((String)map.get("data_denp_nb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb = '" + conv.convertWhereString( (String)map.get("data_denp_nb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_like") != null && ((String)map.get("data_denp_nb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb like '%" + conv.convertWhereString( (String)map.get("data_denp_nb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_bef_like") != null && ((String)map.get("data_denp_nb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb like '%" + conv.convertWhereString( (String)map.get("data_denp_nb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_aft_like") != null && ((String)map.get("data_denp_nb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb like '" + conv.convertWhereString( (String)map.get("data_denp_nb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_in") != null && ((String)map.get("data_denp_nb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("data_denp_nb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("data_denp_nb_not_in") != null && ((String)map.get("data_denp_nb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("data_denp_nb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("data_denp_nb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// file_head_nb に対するWHERE区
+		if( map.get("file_head_nb_bef") != null && ((String)map.get("file_head_nb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb >= '" + conv.convertWhereString( (String)map.get("file_head_nb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_aft") != null && ((String)map.get("file_head_nb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb <= '" + conv.convertWhereString( (String)map.get("file_head_nb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb") != null && ((String)map.get("file_head_nb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb = '" + conv.convertWhereString( (String)map.get("file_head_nb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_like") != null && ((String)map.get("file_head_nb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb like '%" + conv.convertWhereString( (String)map.get("file_head_nb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_bef_like") != null && ((String)map.get("file_head_nb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb like '%" + conv.convertWhereString( (String)map.get("file_head_nb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_aft_like") != null && ((String)map.get("file_head_nb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb like '" + conv.convertWhereString( (String)map.get("file_head_nb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_in") != null && ((String)map.get("file_head_nb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("file_head_nb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("file_head_nb_not_in") != null && ((String)map.get("file_head_nb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("file_head_nb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("file_head_nb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// gaito_system_kb に対するWHERE区
+		if( map.get("gaito_system_kb_bef") != null && ((String)map.get("gaito_system_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb >= '" + conv.convertWhereString( (String)map.get("gaito_system_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_aft") != null && ((String)map.get("gaito_system_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb <= '" + conv.convertWhereString( (String)map.get("gaito_system_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb") != null && ((String)map.get("gaito_system_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb = '" + conv.convertWhereString( (String)map.get("gaito_system_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_like") != null && ((String)map.get("gaito_system_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb like '%" + conv.convertWhereString( (String)map.get("gaito_system_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_bef_like") != null && ((String)map.get("gaito_system_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb like '%" + conv.convertWhereString( (String)map.get("gaito_system_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_aft_like") != null && ((String)map.get("gaito_system_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb like '" + conv.convertWhereString( (String)map.get("gaito_system_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_in") != null && ((String)map.get("gaito_system_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("gaito_system_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("gaito_system_kb_not_in") != null && ((String)map.get("gaito_system_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("gaito_system_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("gaito_system_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenpo_cd に対するWHERE区
+		if( map.get("tenpo_cd_bef") != null && ((String)map.get("tenpo_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd >= '" + conv.convertWhereString( (String)map.get("tenpo_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_aft") != null && ((String)map.get("tenpo_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd <= '" + conv.convertWhereString( (String)map.get("tenpo_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd") != null && ((String)map.get("tenpo_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd = '" + conv.convertWhereString( (String)map.get("tenpo_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_like") != null && ((String)map.get("tenpo_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd like '%" + conv.convertWhereString( (String)map.get("tenpo_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_bef_like") != null && ((String)map.get("tenpo_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd like '%" + conv.convertWhereString( (String)map.get("tenpo_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_aft_like") != null && ((String)map.get("tenpo_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd like '" + conv.convertWhereString( (String)map.get("tenpo_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_in") != null && ((String)map.get("tenpo_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_cd_not_in") != null && ((String)map.get("tenpo_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenhanku_cd に対するWHERE区
+		if( map.get("tenhanku_cd_bef") != null && ((String)map.get("tenhanku_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd >= '" + conv.convertWhereString( (String)map.get("tenhanku_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_aft") != null && ((String)map.get("tenhanku_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd <= '" + conv.convertWhereString( (String)map.get("tenhanku_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd") != null && ((String)map.get("tenhanku_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd = '" + conv.convertWhereString( (String)map.get("tenhanku_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_like") != null && ((String)map.get("tenhanku_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd like '%" + conv.convertWhereString( (String)map.get("tenhanku_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_bef_like") != null && ((String)map.get("tenhanku_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd like '%" + conv.convertWhereString( (String)map.get("tenhanku_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_aft_like") != null && ((String)map.get("tenhanku_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd like '" + conv.convertWhereString( (String)map.get("tenhanku_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_in") != null && ((String)map.get("tenhanku_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhanku_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_cd_not_in") != null && ((String)map.get("tenhanku_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhanku_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// l_gyosyu_cd に対するWHERE区
+		if( map.get("l_gyosyu_cd_bef") != null && ((String)map.get("l_gyosyu_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd >= '" + conv.convertWhereString( (String)map.get("l_gyosyu_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_aft") != null && ((String)map.get("l_gyosyu_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd <= '" + conv.convertWhereString( (String)map.get("l_gyosyu_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd") != null && ((String)map.get("l_gyosyu_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd = '" + conv.convertWhereString( (String)map.get("l_gyosyu_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_like") != null && ((String)map.get("l_gyosyu_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd like '%" + conv.convertWhereString( (String)map.get("l_gyosyu_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_bef_like") != null && ((String)map.get("l_gyosyu_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd like '%" + conv.convertWhereString( (String)map.get("l_gyosyu_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_aft_like") != null && ((String)map.get("l_gyosyu_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd like '" + conv.convertWhereString( (String)map.get("l_gyosyu_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_in") != null && ((String)map.get("l_gyosyu_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("l_gyosyu_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("l_gyosyu_cd_not_in") != null && ((String)map.get("l_gyosyu_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_gyosyu_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("l_gyosyu_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// s_gyosyu_cd に対するWHERE区
+		if( map.get("s_gyosyu_cd_bef") != null && ((String)map.get("s_gyosyu_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd >= '" + conv.convertWhereString( (String)map.get("s_gyosyu_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_aft") != null && ((String)map.get("s_gyosyu_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd <= '" + conv.convertWhereString( (String)map.get("s_gyosyu_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd") != null && ((String)map.get("s_gyosyu_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd = '" + conv.convertWhereString( (String)map.get("s_gyosyu_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_like") != null && ((String)map.get("s_gyosyu_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd like '%" + conv.convertWhereString( (String)map.get("s_gyosyu_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_bef_like") != null && ((String)map.get("s_gyosyu_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd like '%" + conv.convertWhereString( (String)map.get("s_gyosyu_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_aft_like") != null && ((String)map.get("s_gyosyu_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd like '" + conv.convertWhereString( (String)map.get("s_gyosyu_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_in") != null && ((String)map.get("s_gyosyu_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("s_gyosyu_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_cd_not_in") != null && ((String)map.get("s_gyosyu_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("s_gyosyu_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// l_hanku_cd に対するWHERE区
+		if( map.get("l_hanku_cd_bef") != null && ((String)map.get("l_hanku_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd >= '" + conv.convertWhereString( (String)map.get("l_hanku_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_aft") != null && ((String)map.get("l_hanku_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd <= '" + conv.convertWhereString( (String)map.get("l_hanku_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd") != null && ((String)map.get("l_hanku_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd = '" + conv.convertWhereString( (String)map.get("l_hanku_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_like") != null && ((String)map.get("l_hanku_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd like '%" + conv.convertWhereString( (String)map.get("l_hanku_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_bef_like") != null && ((String)map.get("l_hanku_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd like '%" + conv.convertWhereString( (String)map.get("l_hanku_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_aft_like") != null && ((String)map.get("l_hanku_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd like '" + conv.convertWhereString( (String)map.get("l_hanku_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_in") != null && ((String)map.get("l_hanku_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("l_hanku_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("l_hanku_cd_not_in") != null && ((String)map.get("l_hanku_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("l_hanku_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("l_hanku_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// torihikisaki_cd に対するWHERE区
+		if( map.get("torihikisaki_cd_bef") != null && ((String)map.get("torihikisaki_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd >= '" + conv.convertWhereString( (String)map.get("torihikisaki_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_aft") != null && ((String)map.get("torihikisaki_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd <= '" + conv.convertWhereString( (String)map.get("torihikisaki_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd") != null && ((String)map.get("torihikisaki_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd = '" + conv.convertWhereString( (String)map.get("torihikisaki_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_like") != null && ((String)map.get("torihikisaki_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd like '%" + conv.convertWhereString( (String)map.get("torihikisaki_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_bef_like") != null && ((String)map.get("torihikisaki_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd like '%" + conv.convertWhereString( (String)map.get("torihikisaki_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_aft_like") != null && ((String)map.get("torihikisaki_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd like '" + conv.convertWhereString( (String)map.get("torihikisaki_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_in") != null && ((String)map.get("torihikisaki_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_cd_not_in") != null && ((String)map.get("torihikisaki_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_dt に対するWHERE区
+		if( map.get("nohin_dt_bef") != null && ((String)map.get("nohin_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt >= '" + conv.convertWhereString( (String)map.get("nohin_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_aft") != null && ((String)map.get("nohin_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt <= '" + conv.convertWhereString( (String)map.get("nohin_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt") != null && ((String)map.get("nohin_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt = '" + conv.convertWhereString( (String)map.get("nohin_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_like") != null && ((String)map.get("nohin_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt like '%" + conv.convertWhereString( (String)map.get("nohin_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_bef_like") != null && ((String)map.get("nohin_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt like '%" + conv.convertWhereString( (String)map.get("nohin_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_aft_like") != null && ((String)map.get("nohin_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt like '" + conv.convertWhereString( (String)map.get("nohin_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_in") != null && ((String)map.get("nohin_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_dt_not_in") != null && ((String)map.get("nohin_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// denpyo_nb に対するWHERE区
+		if( map.get("denpyo_nb_bef") != null && ((String)map.get("denpyo_nb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb >= '" + conv.convertWhereString( (String)map.get("denpyo_nb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_aft") != null && ((String)map.get("denpyo_nb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb <= '" + conv.convertWhereString( (String)map.get("denpyo_nb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb") != null && ((String)map.get("denpyo_nb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb = '" + conv.convertWhereString( (String)map.get("denpyo_nb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_like") != null && ((String)map.get("denpyo_nb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb like '%" + conv.convertWhereString( (String)map.get("denpyo_nb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_bef_like") != null && ((String)map.get("denpyo_nb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb like '%" + conv.convertWhereString( (String)map.get("denpyo_nb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_aft_like") != null && ((String)map.get("denpyo_nb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb like '" + conv.convertWhereString( (String)map.get("denpyo_nb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_in") != null && ((String)map.get("denpyo_nb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("denpyo_nb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_nb_not_in") != null && ((String)map.get("denpyo_nb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_nb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("denpyo_nb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// hachu_dt に対するWHERE区
+		if( map.get("hachu_dt_bef") != null && ((String)map.get("hachu_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt >= '" + conv.convertWhereString( (String)map.get("hachu_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_aft") != null && ((String)map.get("hachu_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt <= '" + conv.convertWhereString( (String)map.get("hachu_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt") != null && ((String)map.get("hachu_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt = '" + conv.convertWhereString( (String)map.get("hachu_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_like") != null && ((String)map.get("hachu_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt like '%" + conv.convertWhereString( (String)map.get("hachu_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_bef_like") != null && ((String)map.get("hachu_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt like '%" + conv.convertWhereString( (String)map.get("hachu_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_aft_like") != null && ((String)map.get("hachu_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt like '" + conv.convertWhereString( (String)map.get("hachu_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_in") != null && ((String)map.get("hachu_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hachu_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_dt_not_in") != null && ((String)map.get("hachu_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hachu_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// kb_busyo_kb に対するWHERE区
+		if( map.get("kb_busyo_kb_bef") != null && ((String)map.get("kb_busyo_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb >= '" + conv.convertWhereString( (String)map.get("kb_busyo_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_aft") != null && ((String)map.get("kb_busyo_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb <= '" + conv.convertWhereString( (String)map.get("kb_busyo_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb") != null && ((String)map.get("kb_busyo_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb = '" + conv.convertWhereString( (String)map.get("kb_busyo_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_like") != null && ((String)map.get("kb_busyo_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb like '%" + conv.convertWhereString( (String)map.get("kb_busyo_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_bef_like") != null && ((String)map.get("kb_busyo_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb like '%" + conv.convertWhereString( (String)map.get("kb_busyo_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_aft_like") != null && ((String)map.get("kb_busyo_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb like '" + conv.convertWhereString( (String)map.get("kb_busyo_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_in") != null && ((String)map.get("kb_busyo_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kb_busyo_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("kb_busyo_kb_not_in") != null && ((String)map.get("kb_busyo_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_busyo_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kb_busyo_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// bin_nb に対するWHERE区
+		if( map.get("bin_nb_bef") != null && ((String)map.get("bin_nb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb >= '" + conv.convertWhereString( (String)map.get("bin_nb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_aft") != null && ((String)map.get("bin_nb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb <= '" + conv.convertWhereString( (String)map.get("bin_nb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb") != null && ((String)map.get("bin_nb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb = '" + conv.convertWhereString( (String)map.get("bin_nb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_like") != null && ((String)map.get("bin_nb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb like '%" + conv.convertWhereString( (String)map.get("bin_nb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_bef_like") != null && ((String)map.get("bin_nb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb like '%" + conv.convertWhereString( (String)map.get("bin_nb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_aft_like") != null && ((String)map.get("bin_nb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb like '" + conv.convertWhereString( (String)map.get("bin_nb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_in") != null && ((String)map.get("bin_nb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("bin_nb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("bin_nb_not_in") != null && ((String)map.get("bin_nb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("bin_nb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("bin_nb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenpo_na に対するWHERE区
+		if( map.get("tenpo_na_bef") != null && ((String)map.get("tenpo_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na >= '" + conv.convertWhereString( (String)map.get("tenpo_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_aft") != null && ((String)map.get("tenpo_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na <= '" + conv.convertWhereString( (String)map.get("tenpo_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na") != null && ((String)map.get("tenpo_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na = '" + conv.convertWhereString( (String)map.get("tenpo_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_like") != null && ((String)map.get("tenpo_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na like '%" + conv.convertWhereString( (String)map.get("tenpo_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_bef_like") != null && ((String)map.get("tenpo_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na like '%" + conv.convertWhereString( (String)map.get("tenpo_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_aft_like") != null && ((String)map.get("tenpo_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na like '" + conv.convertWhereString( (String)map.get("tenpo_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_in") != null && ((String)map.get("tenpo_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_na_not_in") != null && ((String)map.get("tenpo_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenpo_ka に対するWHERE区
+		if( map.get("tenpo_ka_bef") != null && ((String)map.get("tenpo_ka_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka >= '" + conv.convertWhereString( (String)map.get("tenpo_ka_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_aft") != null && ((String)map.get("tenpo_ka_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka <= '" + conv.convertWhereString( (String)map.get("tenpo_ka_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka") != null && ((String)map.get("tenpo_ka")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka = '" + conv.convertWhereString( (String)map.get("tenpo_ka") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_like") != null && ((String)map.get("tenpo_ka_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka like '%" + conv.convertWhereString( (String)map.get("tenpo_ka_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_bef_like") != null && ((String)map.get("tenpo_ka_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka like '%" + conv.convertWhereString( (String)map.get("tenpo_ka_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_aft_like") != null && ((String)map.get("tenpo_ka_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka like '" + conv.convertWhereString( (String)map.get("tenpo_ka_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_in") != null && ((String)map.get("tenpo_ka_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_ka_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_ka_not_in") != null && ((String)map.get("tenpo_ka_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_ka not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_ka_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenhanku_na に対するWHERE区
+		if( map.get("tenhanku_na_bef") != null && ((String)map.get("tenhanku_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na >= '" + conv.convertWhereString( (String)map.get("tenhanku_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_aft") != null && ((String)map.get("tenhanku_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na <= '" + conv.convertWhereString( (String)map.get("tenhanku_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na") != null && ((String)map.get("tenhanku_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na = '" + conv.convertWhereString( (String)map.get("tenhanku_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_like") != null && ((String)map.get("tenhanku_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na like '%" + conv.convertWhereString( (String)map.get("tenhanku_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_bef_like") != null && ((String)map.get("tenhanku_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na like '%" + conv.convertWhereString( (String)map.get("tenhanku_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_aft_like") != null && ((String)map.get("tenhanku_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na like '" + conv.convertWhereString( (String)map.get("tenhanku_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_in") != null && ((String)map.get("tenhanku_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhanku_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenhanku_na_not_in") != null && ((String)map.get("tenhanku_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhanku_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhanku_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// s_gyosyu_na に対するWHERE区
+		if( map.get("s_gyosyu_na_bef") != null && ((String)map.get("s_gyosyu_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na >= '" + conv.convertWhereString( (String)map.get("s_gyosyu_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_aft") != null && ((String)map.get("s_gyosyu_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na <= '" + conv.convertWhereString( (String)map.get("s_gyosyu_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na") != null && ((String)map.get("s_gyosyu_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na = '" + conv.convertWhereString( (String)map.get("s_gyosyu_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_like") != null && ((String)map.get("s_gyosyu_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na like '%" + conv.convertWhereString( (String)map.get("s_gyosyu_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_bef_like") != null && ((String)map.get("s_gyosyu_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na like '%" + conv.convertWhereString( (String)map.get("s_gyosyu_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_aft_like") != null && ((String)map.get("s_gyosyu_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na like '" + conv.convertWhereString( (String)map.get("s_gyosyu_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_in") != null && ((String)map.get("s_gyosyu_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("s_gyosyu_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("s_gyosyu_na_not_in") != null && ((String)map.get("s_gyosyu_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("s_gyosyu_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("s_gyosyu_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// torihikisaki_na に対するWHERE区
+		if( map.get("torihikisaki_na_bef") != null && ((String)map.get("torihikisaki_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na >= '" + conv.convertWhereString( (String)map.get("torihikisaki_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_aft") != null && ((String)map.get("torihikisaki_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na <= '" + conv.convertWhereString( (String)map.get("torihikisaki_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na") != null && ((String)map.get("torihikisaki_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na = '" + conv.convertWhereString( (String)map.get("torihikisaki_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_like") != null && ((String)map.get("torihikisaki_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na like '%" + conv.convertWhereString( (String)map.get("torihikisaki_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_bef_like") != null && ((String)map.get("torihikisaki_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na like '%" + conv.convertWhereString( (String)map.get("torihikisaki_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_aft_like") != null && ((String)map.get("torihikisaki_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na like '" + conv.convertWhereString( (String)map.get("torihikisaki_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_in") != null && ((String)map.get("torihikisaki_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_na_not_in") != null && ((String)map.get("torihikisaki_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// torihikisaki_ka に対するWHERE区
+		if( map.get("torihikisaki_ka_bef") != null && ((String)map.get("torihikisaki_ka_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka >= '" + conv.convertWhereString( (String)map.get("torihikisaki_ka_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_aft") != null && ((String)map.get("torihikisaki_ka_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka <= '" + conv.convertWhereString( (String)map.get("torihikisaki_ka_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka") != null && ((String)map.get("torihikisaki_ka")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka = '" + conv.convertWhereString( (String)map.get("torihikisaki_ka") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_like") != null && ((String)map.get("torihikisaki_ka_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka like '%" + conv.convertWhereString( (String)map.get("torihikisaki_ka_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_bef_like") != null && ((String)map.get("torihikisaki_ka_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka like '%" + conv.convertWhereString( (String)map.get("torihikisaki_ka_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_aft_like") != null && ((String)map.get("torihikisaki_ka_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka like '" + conv.convertWhereString( (String)map.get("torihikisaki_ka_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_in") != null && ((String)map.get("torihikisaki_ka_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_ka_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("torihikisaki_ka_not_in") != null && ((String)map.get("torihikisaki_ka_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("torihikisaki_ka not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("torihikisaki_ka_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// genka_kei_vl に対するWHERE区
+		if( map.get("genka_kei_vl_bef") != null && ((String)map.get("genka_kei_vl_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("genka_kei_vl >= " + (String)map.get("genka_kei_vl_bef") );
+			whereStr = andStr;
+		}
+		if( map.get("genka_kei_vl_aft") != null && ((String)map.get("genka_kei_vl_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("genka_kei_vl <= " + (String)map.get("genka_kei_vl_aft") );
+			whereStr = andStr;
+		}
+		if( map.get("genka_kei_vl") != null && ((String)map.get("genka_kei_vl")).trim().length() > 0  )
+		{
+			sb.append(whereStr);
+			sb.append("genka_kei_vl = " + (String)map.get("genka_kei_vl"));
+			whereStr = andStr;
+		}
+		if( map.get("genka_kei_vl_in") != null && ((String)map.get("genka_kei_vl_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("genka_kei_vl in ( " + conv.convertWhereString( (String)map.get("genka_kei_vl_in") ) + " )");
+			whereStr = andStr;
+		}
+		if( map.get("genka_kei_vl_not_in") != null && ((String)map.get("genka_kei_vl_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("genka_kei_vl not in ( " + conv.convertWhereString( (String)map.get("genka_kei_vl_not_in") ) + " )");
+			whereStr = andStr;
+		}
+
+
+		// baika_kei_vl に対するWHERE区
+		if( map.get("baika_kei_vl_bef") != null && ((String)map.get("baika_kei_vl_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("baika_kei_vl >= " + (String)map.get("baika_kei_vl_bef") );
+			whereStr = andStr;
+		}
+		if( map.get("baika_kei_vl_aft") != null && ((String)map.get("baika_kei_vl_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("baika_kei_vl <= " + (String)map.get("baika_kei_vl_aft") );
+			whereStr = andStr;
+		}
+		if( map.get("baika_kei_vl") != null && ((String)map.get("baika_kei_vl")).trim().length() > 0  )
+		{
+			sb.append(whereStr);
+			sb.append("baika_kei_vl = " + (String)map.get("baika_kei_vl"));
+			whereStr = andStr;
+		}
+		if( map.get("baika_kei_vl_in") != null && ((String)map.get("baika_kei_vl_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("baika_kei_vl in ( " + conv.convertWhereString( (String)map.get("baika_kei_vl_in") ) + " )");
+			whereStr = andStr;
+		}
+		if( map.get("baika_kei_vl_not_in") != null && ((String)map.get("baika_kei_vl_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("baika_kei_vl not in ( " + conv.convertWhereString( (String)map.get("baika_kei_vl_not_in") ) + " )");
+			whereStr = andStr;
+		}
+
+
+		// tei_genka_kei_vl に対するWHERE区
+		if( map.get("tei_genka_kei_vl_bef") != null && ((String)map.get("tei_genka_kei_vl_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_genka_kei_vl >= " + (String)map.get("tei_genka_kei_vl_bef") );
+			whereStr = andStr;
+		}
+		if( map.get("tei_genka_kei_vl_aft") != null && ((String)map.get("tei_genka_kei_vl_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_genka_kei_vl <= " + (String)map.get("tei_genka_kei_vl_aft") );
+			whereStr = andStr;
+		}
+		if( map.get("tei_genka_kei_vl") != null && ((String)map.get("tei_genka_kei_vl")).trim().length() > 0  )
+		{
+			sb.append(whereStr);
+			sb.append("tei_genka_kei_vl = " + (String)map.get("tei_genka_kei_vl"));
+			whereStr = andStr;
+		}
+		if( map.get("tei_genka_kei_vl_in") != null && ((String)map.get("tei_genka_kei_vl_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_genka_kei_vl in ( " + conv.convertWhereString( (String)map.get("tei_genka_kei_vl_in") ) + " )");
+			whereStr = andStr;
+		}
+		if( map.get("tei_genka_kei_vl_not_in") != null && ((String)map.get("tei_genka_kei_vl_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_genka_kei_vl not in ( " + conv.convertWhereString( (String)map.get("tei_genka_kei_vl_not_in") ) + " )");
+			whereStr = andStr;
+		}
+
+
+		// tei_baika_kei_vl に対するWHERE区
+		if( map.get("tei_baika_kei_vl_bef") != null && ((String)map.get("tei_baika_kei_vl_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_baika_kei_vl >= " + (String)map.get("tei_baika_kei_vl_bef") );
+			whereStr = andStr;
+		}
+		if( map.get("tei_baika_kei_vl_aft") != null && ((String)map.get("tei_baika_kei_vl_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_baika_kei_vl <= " + (String)map.get("tei_baika_kei_vl_aft") );
+			whereStr = andStr;
+		}
+		if( map.get("tei_baika_kei_vl") != null && ((String)map.get("tei_baika_kei_vl")).trim().length() > 0  )
+		{
+			sb.append(whereStr);
+			sb.append("tei_baika_kei_vl = " + (String)map.get("tei_baika_kei_vl"));
+			whereStr = andStr;
+		}
+		if( map.get("tei_baika_kei_vl_in") != null && ((String)map.get("tei_baika_kei_vl_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_baika_kei_vl in ( " + conv.convertWhereString( (String)map.get("tei_baika_kei_vl_in") ) + " )");
+			whereStr = andStr;
+		}
+		if( map.get("tei_baika_kei_vl_not_in") != null && ((String)map.get("tei_baika_kei_vl_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_baika_kei_vl not in ( " + conv.convertWhereString( (String)map.get("tei_baika_kei_vl_not_in") ) + " )");
+			whereStr = andStr;
+		}
+
+
+		// tei_fg に対するWHERE区
+		if( map.get("tei_fg_bef") != null && ((String)map.get("tei_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg >= '" + conv.convertWhereString( (String)map.get("tei_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_aft") != null && ((String)map.get("tei_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg <= '" + conv.convertWhereString( (String)map.get("tei_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg") != null && ((String)map.get("tei_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg = '" + conv.convertWhereString( (String)map.get("tei_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_like") != null && ((String)map.get("tei_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg like '%" + conv.convertWhereString( (String)map.get("tei_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_bef_like") != null && ((String)map.get("tei_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg like '%" + conv.convertWhereString( (String)map.get("tei_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_aft_like") != null && ((String)map.get("tei_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg like '" + conv.convertWhereString( (String)map.get("tei_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_in") != null && ((String)map.get("tei_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tei_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tei_fg_not_in") != null && ((String)map.get("tei_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tei_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tei_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// teisei_ruyu_kb に対するWHERE区
+		if( map.get("teisei_ruyu_kb_bef") != null && ((String)map.get("teisei_ruyu_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb >= '" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_aft") != null && ((String)map.get("teisei_ruyu_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb <= '" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb") != null && ((String)map.get("teisei_ruyu_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb = '" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_like") != null && ((String)map.get("teisei_ruyu_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb like '%" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_bef_like") != null && ((String)map.get("teisei_ruyu_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb like '%" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_aft_like") != null && ((String)map.get("teisei_ruyu_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb like '" + conv.convertWhereString( (String)map.get("teisei_ruyu_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_in") != null && ((String)map.get("teisei_ruyu_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("teisei_ruyu_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("teisei_ruyu_kb_not_in") != null && ((String)map.get("teisei_ruyu_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("teisei_ruyu_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("teisei_ruyu_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// seisen_fg に対するWHERE区
+		if( map.get("seisen_fg_bef") != null && ((String)map.get("seisen_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg >= '" + conv.convertWhereString( (String)map.get("seisen_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_aft") != null && ((String)map.get("seisen_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg <= '" + conv.convertWhereString( (String)map.get("seisen_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg") != null && ((String)map.get("seisen_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg = '" + conv.convertWhereString( (String)map.get("seisen_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_like") != null && ((String)map.get("seisen_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg like '%" + conv.convertWhereString( (String)map.get("seisen_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_bef_like") != null && ((String)map.get("seisen_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg like '%" + conv.convertWhereString( (String)map.get("seisen_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_aft_like") != null && ((String)map.get("seisen_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg like '" + conv.convertWhereString( (String)map.get("seisen_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_in") != null && ((String)map.get("seisen_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("seisen_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("seisen_fg_not_in") != null && ((String)map.get("seisen_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("seisen_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("seisen_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// kb_soba_kb に対するWHERE区
+		if( map.get("kb_soba_kb_bef") != null && ((String)map.get("kb_soba_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb >= '" + conv.convertWhereString( (String)map.get("kb_soba_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_aft") != null && ((String)map.get("kb_soba_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb <= '" + conv.convertWhereString( (String)map.get("kb_soba_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb") != null && ((String)map.get("kb_soba_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb = '" + conv.convertWhereString( (String)map.get("kb_soba_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_like") != null && ((String)map.get("kb_soba_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb like '%" + conv.convertWhereString( (String)map.get("kb_soba_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_bef_like") != null && ((String)map.get("kb_soba_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb like '%" + conv.convertWhereString( (String)map.get("kb_soba_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_aft_like") != null && ((String)map.get("kb_soba_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb like '" + conv.convertWhereString( (String)map.get("kb_soba_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_in") != null && ((String)map.get("kb_soba_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kb_soba_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("kb_soba_kb_not_in") != null && ((String)map.get("kb_soba_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kb_soba_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kb_soba_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// haiso_kb に対するWHERE区
+		if( map.get("haiso_kb_bef") != null && ((String)map.get("haiso_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb >= '" + conv.convertWhereString( (String)map.get("haiso_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_aft") != null && ((String)map.get("haiso_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb <= '" + conv.convertWhereString( (String)map.get("haiso_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb") != null && ((String)map.get("haiso_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb = '" + conv.convertWhereString( (String)map.get("haiso_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_like") != null && ((String)map.get("haiso_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb like '%" + conv.convertWhereString( (String)map.get("haiso_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_bef_like") != null && ((String)map.get("haiso_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb like '%" + conv.convertWhereString( (String)map.get("haiso_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_aft_like") != null && ((String)map.get("haiso_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb like '" + conv.convertWhereString( (String)map.get("haiso_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_in") != null && ((String)map.get("haiso_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haiso_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("haiso_kb_not_in") != null && ((String)map.get("haiso_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haiso_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haiso_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// denpyo_kb に対するWHERE区
+		if( map.get("denpyo_kb_bef") != null && ((String)map.get("denpyo_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb >= '" + conv.convertWhereString( (String)map.get("denpyo_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_aft") != null && ((String)map.get("denpyo_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb <= '" + conv.convertWhereString( (String)map.get("denpyo_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb") != null && ((String)map.get("denpyo_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb = '" + conv.convertWhereString( (String)map.get("denpyo_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_like") != null && ((String)map.get("denpyo_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb like '%" + conv.convertWhereString( (String)map.get("denpyo_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_bef_like") != null && ((String)map.get("denpyo_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb like '%" + conv.convertWhereString( (String)map.get("denpyo_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_aft_like") != null && ((String)map.get("denpyo_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb like '" + conv.convertWhereString( (String)map.get("denpyo_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_in") != null && ((String)map.get("denpyo_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("denpyo_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("denpyo_kb_not_in") != null && ((String)map.get("denpyo_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("denpyo_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("denpyo_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// zei_kb に対するWHERE区
+		if( map.get("zei_kb_bef") != null && ((String)map.get("zei_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb >= '" + conv.convertWhereString( (String)map.get("zei_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_aft") != null && ((String)map.get("zei_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb <= '" + conv.convertWhereString( (String)map.get("zei_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb") != null && ((String)map.get("zei_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb = '" + conv.convertWhereString( (String)map.get("zei_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_like") != null && ((String)map.get("zei_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb like '%" + conv.convertWhereString( (String)map.get("zei_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_bef_like") != null && ((String)map.get("zei_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb like '%" + conv.convertWhereString( (String)map.get("zei_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_aft_like") != null && ((String)map.get("zei_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb like '" + conv.convertWhereString( (String)map.get("zei_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_in") != null && ((String)map.get("zei_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("zei_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("zei_kb_not_in") != null && ((String)map.get("zei_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zei_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("zei_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// hachu_kb に対するWHERE区
+		if( map.get("hachu_kb_bef") != null && ((String)map.get("hachu_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb >= '" + conv.convertWhereString( (String)map.get("hachu_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_aft") != null && ((String)map.get("hachu_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb <= '" + conv.convertWhereString( (String)map.get("hachu_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb") != null && ((String)map.get("hachu_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb = '" + conv.convertWhereString( (String)map.get("hachu_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_like") != null && ((String)map.get("hachu_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb like '%" + conv.convertWhereString( (String)map.get("hachu_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_bef_like") != null && ((String)map.get("hachu_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb like '%" + conv.convertWhereString( (String)map.get("hachu_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_aft_like") != null && ((String)map.get("hachu_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb like '" + conv.convertWhereString( (String)map.get("hachu_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_in") != null && ((String)map.get("hachu_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hachu_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("hachu_kb_not_in") != null && ((String)map.get("hachu_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hachu_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hachu_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenpo_hachu_kb に対するWHERE区
+		if( map.get("tenpo_hachu_kb_bef") != null && ((String)map.get("tenpo_hachu_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb >= '" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_aft") != null && ((String)map.get("tenpo_hachu_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb <= '" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb") != null && ((String)map.get("tenpo_hachu_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb = '" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_like") != null && ((String)map.get("tenpo_hachu_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb like '%" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_bef_like") != null && ((String)map.get("tenpo_hachu_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb like '%" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_aft_like") != null && ((String)map.get("tenpo_hachu_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb like '" + conv.convertWhereString( (String)map.get("tenpo_hachu_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_in") != null && ((String)map.get("tenpo_hachu_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_hachu_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenpo_hachu_kb_not_in") != null && ((String)map.get("tenpo_hachu_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenpo_hachu_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenpo_hachu_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// ikatu_denp_fg に対するWHERE区
+		if( map.get("ikatu_denp_fg_bef") != null && ((String)map.get("ikatu_denp_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg >= '" + conv.convertWhereString( (String)map.get("ikatu_denp_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_aft") != null && ((String)map.get("ikatu_denp_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg <= '" + conv.convertWhereString( (String)map.get("ikatu_denp_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg") != null && ((String)map.get("ikatu_denp_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg = '" + conv.convertWhereString( (String)map.get("ikatu_denp_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_like") != null && ((String)map.get("ikatu_denp_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg like '%" + conv.convertWhereString( (String)map.get("ikatu_denp_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_bef_like") != null && ((String)map.get("ikatu_denp_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg like '%" + conv.convertWhereString( (String)map.get("ikatu_denp_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_aft_like") != null && ((String)map.get("ikatu_denp_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg like '" + conv.convertWhereString( (String)map.get("ikatu_denp_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_in") != null && ((String)map.get("ikatu_denp_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("ikatu_denp_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("ikatu_denp_fg_not_in") != null && ((String)map.get("ikatu_denp_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("ikatu_denp_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("ikatu_denp_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// syohin_theme_na に対するWHERE区
+		if( map.get("syohin_theme_na_bef") != null && ((String)map.get("syohin_theme_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na >= '" + conv.convertWhereString( (String)map.get("syohin_theme_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_aft") != null && ((String)map.get("syohin_theme_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na <= '" + conv.convertWhereString( (String)map.get("syohin_theme_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na") != null && ((String)map.get("syohin_theme_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na = '" + conv.convertWhereString( (String)map.get("syohin_theme_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_like") != null && ((String)map.get("syohin_theme_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na like '%" + conv.convertWhereString( (String)map.get("syohin_theme_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_bef_like") != null && ((String)map.get("syohin_theme_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na like '%" + conv.convertWhereString( (String)map.get("syohin_theme_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_aft_like") != null && ((String)map.get("syohin_theme_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na like '" + conv.convertWhereString( (String)map.get("syohin_theme_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_in") != null && ((String)map.get("syohin_theme_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("syohin_theme_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("syohin_theme_na_not_in") != null && ((String)map.get("syohin_theme_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("syohin_theme_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("syohin_theme_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// haisosaki_cd に対するWHERE区
+		if( map.get("haisosaki_cd_bef") != null && ((String)map.get("haisosaki_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd >= '" + conv.convertWhereString( (String)map.get("haisosaki_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_aft") != null && ((String)map.get("haisosaki_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd <= '" + conv.convertWhereString( (String)map.get("haisosaki_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd") != null && ((String)map.get("haisosaki_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd = '" + conv.convertWhereString( (String)map.get("haisosaki_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_like") != null && ((String)map.get("haisosaki_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd like '%" + conv.convertWhereString( (String)map.get("haisosaki_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_bef_like") != null && ((String)map.get("haisosaki_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd like '%" + conv.convertWhereString( (String)map.get("haisosaki_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_aft_like") != null && ((String)map.get("haisosaki_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd like '" + conv.convertWhereString( (String)map.get("haisosaki_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_in") != null && ((String)map.get("haisosaki_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisosaki_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_cd_not_in") != null && ((String)map.get("haisosaki_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisosaki_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// haisosaki_na に対するWHERE区
+		if( map.get("haisosaki_na_bef") != null && ((String)map.get("haisosaki_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na >= '" + conv.convertWhereString( (String)map.get("haisosaki_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_aft") != null && ((String)map.get("haisosaki_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na <= '" + conv.convertWhereString( (String)map.get("haisosaki_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na") != null && ((String)map.get("haisosaki_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na = '" + conv.convertWhereString( (String)map.get("haisosaki_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_like") != null && ((String)map.get("haisosaki_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na like '%" + conv.convertWhereString( (String)map.get("haisosaki_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_bef_like") != null && ((String)map.get("haisosaki_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na like '%" + conv.convertWhereString( (String)map.get("haisosaki_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_aft_like") != null && ((String)map.get("haisosaki_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na like '" + conv.convertWhereString( (String)map.get("haisosaki_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_in") != null && ((String)map.get("haisosaki_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisosaki_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("haisosaki_na_not_in") != null && ((String)map.get("haisosaki_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisosaki_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisosaki_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_center_cd に対するWHERE区
+		if( map.get("nohin_center_cd_bef") != null && ((String)map.get("nohin_center_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd >= '" + conv.convertWhereString( (String)map.get("nohin_center_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_aft") != null && ((String)map.get("nohin_center_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd <= '" + conv.convertWhereString( (String)map.get("nohin_center_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd") != null && ((String)map.get("nohin_center_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd = '" + conv.convertWhereString( (String)map.get("nohin_center_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_like") != null && ((String)map.get("nohin_center_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd like '%" + conv.convertWhereString( (String)map.get("nohin_center_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_bef_like") != null && ((String)map.get("nohin_center_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd like '%" + conv.convertWhereString( (String)map.get("nohin_center_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_aft_like") != null && ((String)map.get("nohin_center_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd like '" + conv.convertWhereString( (String)map.get("nohin_center_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_in") != null && ((String)map.get("nohin_center_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_center_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_center_cd_not_in") != null && ((String)map.get("nohin_center_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_center_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_center_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// keiyu_center_cd に対するWHERE区
+		if( map.get("keiyu_center_cd_bef") != null && ((String)map.get("keiyu_center_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd >= '" + conv.convertWhereString( (String)map.get("keiyu_center_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_aft") != null && ((String)map.get("keiyu_center_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd <= '" + conv.convertWhereString( (String)map.get("keiyu_center_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd") != null && ((String)map.get("keiyu_center_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd = '" + conv.convertWhereString( (String)map.get("keiyu_center_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_like") != null && ((String)map.get("keiyu_center_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd like '%" + conv.convertWhereString( (String)map.get("keiyu_center_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_bef_like") != null && ((String)map.get("keiyu_center_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd like '%" + conv.convertWhereString( (String)map.get("keiyu_center_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_aft_like") != null && ((String)map.get("keiyu_center_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd like '" + conv.convertWhereString( (String)map.get("keiyu_center_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_in") != null && ((String)map.get("keiyu_center_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keiyu_center_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("keiyu_center_cd_not_in") != null && ((String)map.get("keiyu_center_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keiyu_center_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keiyu_center_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// tenhai_center_cd に対するWHERE区
+		if( map.get("tenhai_center_cd_bef") != null && ((String)map.get("tenhai_center_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd >= '" + conv.convertWhereString( (String)map.get("tenhai_center_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_aft") != null && ((String)map.get("tenhai_center_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd <= '" + conv.convertWhereString( (String)map.get("tenhai_center_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd") != null && ((String)map.get("tenhai_center_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd = '" + conv.convertWhereString( (String)map.get("tenhai_center_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_like") != null && ((String)map.get("tenhai_center_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd like '%" + conv.convertWhereString( (String)map.get("tenhai_center_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_bef_like") != null && ((String)map.get("tenhai_center_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd like '%" + conv.convertWhereString( (String)map.get("tenhai_center_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_aft_like") != null && ((String)map.get("tenhai_center_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd like '" + conv.convertWhereString( (String)map.get("tenhai_center_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_in") != null && ((String)map.get("tenhai_center_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhai_center_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("tenhai_center_cd_not_in") != null && ((String)map.get("tenhai_center_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("tenhai_center_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("tenhai_center_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// zaiko_center_cd に対するWHERE区
+		if( map.get("zaiko_center_cd_bef") != null && ((String)map.get("zaiko_center_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd >= '" + conv.convertWhereString( (String)map.get("zaiko_center_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_aft") != null && ((String)map.get("zaiko_center_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd <= '" + conv.convertWhereString( (String)map.get("zaiko_center_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd") != null && ((String)map.get("zaiko_center_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd = '" + conv.convertWhereString( (String)map.get("zaiko_center_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_like") != null && ((String)map.get("zaiko_center_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd like '%" + conv.convertWhereString( (String)map.get("zaiko_center_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_bef_like") != null && ((String)map.get("zaiko_center_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd like '%" + conv.convertWhereString( (String)map.get("zaiko_center_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_aft_like") != null && ((String)map.get("zaiko_center_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd like '" + conv.convertWhereString( (String)map.get("zaiko_center_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_in") != null && ((String)map.get("zaiko_center_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("zaiko_center_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("zaiko_center_cd_not_in") != null && ((String)map.get("zaiko_center_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("zaiko_center_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("zaiko_center_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_syori_kb に対するWHERE区
+		if( map.get("nohin_syori_kb_bef") != null && ((String)map.get("nohin_syori_kb_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb >= '" + conv.convertWhereString( (String)map.get("nohin_syori_kb_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_aft") != null && ((String)map.get("nohin_syori_kb_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb <= '" + conv.convertWhereString( (String)map.get("nohin_syori_kb_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb") != null && ((String)map.get("nohin_syori_kb")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb = '" + conv.convertWhereString( (String)map.get("nohin_syori_kb") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_like") != null && ((String)map.get("nohin_syori_kb_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb like '%" + conv.convertWhereString( (String)map.get("nohin_syori_kb_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_bef_like") != null && ((String)map.get("nohin_syori_kb_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb like '%" + conv.convertWhereString( (String)map.get("nohin_syori_kb_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_aft_like") != null && ((String)map.get("nohin_syori_kb_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb like '" + conv.convertWhereString( (String)map.get("nohin_syori_kb_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_in") != null && ((String)map.get("nohin_syori_kb_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_syori_kb_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_syori_kb_not_in") != null && ((String)map.get("nohin_syori_kb_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_syori_kb not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_syori_kb_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_list_qt に対するWHERE区
+		if( map.get("nohin_list_qt_bef") != null && ((String)map.get("nohin_list_qt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_list_qt >= " + (String)map.get("nohin_list_qt_bef") );
+			whereStr = andStr;
+		}
+		if( map.get("nohin_list_qt_aft") != null && ((String)map.get("nohin_list_qt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_list_qt <= " + (String)map.get("nohin_list_qt_aft") );
+			whereStr = andStr;
+		}
+		if( map.get("nohin_list_qt") != null && ((String)map.get("nohin_list_qt")).trim().length() > 0  )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_list_qt = " + (String)map.get("nohin_list_qt"));
+			whereStr = andStr;
+		}
+		if( map.get("nohin_list_qt_in") != null && ((String)map.get("nohin_list_qt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_list_qt in ( " + conv.convertWhereString( (String)map.get("nohin_list_qt_in") ) + " )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_list_qt_not_in") != null && ((String)map.get("nohin_list_qt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_list_qt not in ( " + conv.convertWhereString( (String)map.get("nohin_list_qt_not_in") ) + " )");
+			whereStr = andStr;
+		}
+
+
+		// haisinsaki_cd に対するWHERE区
+		if( map.get("haisinsaki_cd_bef") != null && ((String)map.get("haisinsaki_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd >= '" + conv.convertWhereString( (String)map.get("haisinsaki_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_aft") != null && ((String)map.get("haisinsaki_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd <= '" + conv.convertWhereString( (String)map.get("haisinsaki_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd") != null && ((String)map.get("haisinsaki_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd = '" + conv.convertWhereString( (String)map.get("haisinsaki_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_like") != null && ((String)map.get("haisinsaki_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd like '%" + conv.convertWhereString( (String)map.get("haisinsaki_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_bef_like") != null && ((String)map.get("haisinsaki_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd like '%" + conv.convertWhereString( (String)map.get("haisinsaki_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_aft_like") != null && ((String)map.get("haisinsaki_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd like '" + conv.convertWhereString( (String)map.get("haisinsaki_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_in") != null && ((String)map.get("haisinsaki_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisinsaki_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("haisinsaki_cd_not_in") != null && ((String)map.get("haisinsaki_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("haisinsaki_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("haisinsaki_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// hojin_cd に対するWHERE区
+		if( map.get("hojin_cd_bef") != null && ((String)map.get("hojin_cd_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd >= '" + conv.convertWhereString( (String)map.get("hojin_cd_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_aft") != null && ((String)map.get("hojin_cd_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd <= '" + conv.convertWhereString( (String)map.get("hojin_cd_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd") != null && ((String)map.get("hojin_cd")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd = '" + conv.convertWhereString( (String)map.get("hojin_cd") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_like") != null && ((String)map.get("hojin_cd_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd like '%" + conv.convertWhereString( (String)map.get("hojin_cd_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_bef_like") != null && ((String)map.get("hojin_cd_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd like '%" + conv.convertWhereString( (String)map.get("hojin_cd_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_aft_like") != null && ((String)map.get("hojin_cd_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd like '" + conv.convertWhereString( (String)map.get("hojin_cd_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_in") != null && ((String)map.get("hojin_cd_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hojin_cd_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_cd_not_in") != null && ((String)map.get("hojin_cd_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_cd not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hojin_cd_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// hojin_na に対するWHERE区
+		if( map.get("hojin_na_bef") != null && ((String)map.get("hojin_na_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na >= '" + conv.convertWhereString( (String)map.get("hojin_na_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_aft") != null && ((String)map.get("hojin_na_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na <= '" + conv.convertWhereString( (String)map.get("hojin_na_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na") != null && ((String)map.get("hojin_na")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na = '" + conv.convertWhereString( (String)map.get("hojin_na") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_like") != null && ((String)map.get("hojin_na_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na like '%" + conv.convertWhereString( (String)map.get("hojin_na_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_bef_like") != null && ((String)map.get("hojin_na_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na like '%" + conv.convertWhereString( (String)map.get("hojin_na_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_aft_like") != null && ((String)map.get("hojin_na_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na like '" + conv.convertWhereString( (String)map.get("hojin_na_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_in") != null && ((String)map.get("hojin_na_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hojin_na_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("hojin_na_not_in") != null && ((String)map.get("hojin_na_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("hojin_na not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("hojin_na_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// kakutei_fg に対するWHERE区
+		if( map.get("kakutei_fg_bef") != null && ((String)map.get("kakutei_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg >= '" + conv.convertWhereString( (String)map.get("kakutei_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_aft") != null && ((String)map.get("kakutei_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg <= '" + conv.convertWhereString( (String)map.get("kakutei_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg") != null && ((String)map.get("kakutei_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg = '" + conv.convertWhereString( (String)map.get("kakutei_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_like") != null && ((String)map.get("kakutei_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg like '%" + conv.convertWhereString( (String)map.get("kakutei_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_bef_like") != null && ((String)map.get("kakutei_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg like '%" + conv.convertWhereString( (String)map.get("kakutei_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_aft_like") != null && ((String)map.get("kakutei_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg like '" + conv.convertWhereString( (String)map.get("kakutei_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_in") != null && ((String)map.get("kakutei_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_fg_not_in") != null && ((String)map.get("kakutei_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// kakutei_user_id に対するWHERE区
+		if( map.get("kakutei_user_id_bef") != null && ((String)map.get("kakutei_user_id_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id >= '" + conv.convertWhereString( (String)map.get("kakutei_user_id_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_aft") != null && ((String)map.get("kakutei_user_id_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id <= '" + conv.convertWhereString( (String)map.get("kakutei_user_id_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id") != null && ((String)map.get("kakutei_user_id")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id = '" + conv.convertWhereString( (String)map.get("kakutei_user_id") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_like") != null && ((String)map.get("kakutei_user_id_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id like '%" + conv.convertWhereString( (String)map.get("kakutei_user_id_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_bef_like") != null && ((String)map.get("kakutei_user_id_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id like '%" + conv.convertWhereString( (String)map.get("kakutei_user_id_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_aft_like") != null && ((String)map.get("kakutei_user_id_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id like '" + conv.convertWhereString( (String)map.get("kakutei_user_id_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_in") != null && ((String)map.get("kakutei_user_id_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_user_id_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_user_id_not_in") != null && ((String)map.get("kakutei_user_id_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_user_id not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_user_id_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// kakutei_ts に対するWHERE区
+		if( map.get("kakutei_ts_bef") != null && ((String)map.get("kakutei_ts_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts >= '" + conv.convertWhereString( (String)map.get("kakutei_ts_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_aft") != null && ((String)map.get("kakutei_ts_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts <= '" + conv.convertWhereString( (String)map.get("kakutei_ts_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts") != null && ((String)map.get("kakutei_ts")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts = '" + conv.convertWhereString( (String)map.get("kakutei_ts") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_like") != null && ((String)map.get("kakutei_ts_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts like '%" + conv.convertWhereString( (String)map.get("kakutei_ts_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_bef_like") != null && ((String)map.get("kakutei_ts_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts like '%" + conv.convertWhereString( (String)map.get("kakutei_ts_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_aft_like") != null && ((String)map.get("kakutei_ts_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts like '" + conv.convertWhereString( (String)map.get("kakutei_ts_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_in") != null && ((String)map.get("kakutei_ts_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_ts_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("kakutei_ts_not_in") != null && ((String)map.get("kakutei_ts_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("kakutei_ts not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("kakutei_ts_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// keijo_dt に対するWHERE区
+		if( map.get("keijo_dt_bef") != null && ((String)map.get("keijo_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt >= '" + conv.convertWhereString( (String)map.get("keijo_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_aft") != null && ((String)map.get("keijo_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt <= '" + conv.convertWhereString( (String)map.get("keijo_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt") != null && ((String)map.get("keijo_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt = '" + conv.convertWhereString( (String)map.get("keijo_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_like") != null && ((String)map.get("keijo_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt like '%" + conv.convertWhereString( (String)map.get("keijo_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_bef_like") != null && ((String)map.get("keijo_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt like '%" + conv.convertWhereString( (String)map.get("keijo_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_aft_like") != null && ((String)map.get("keijo_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt like '" + conv.convertWhereString( (String)map.get("keijo_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_in") != null && ((String)map.get("keijo_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_dt_not_in") != null && ((String)map.get("keijo_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// keijo_make_fg に対するWHERE区
+		if( map.get("keijo_make_fg_bef") != null && ((String)map.get("keijo_make_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg >= '" + conv.convertWhereString( (String)map.get("keijo_make_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_aft") != null && ((String)map.get("keijo_make_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg <= '" + conv.convertWhereString( (String)map.get("keijo_make_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg") != null && ((String)map.get("keijo_make_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg = '" + conv.convertWhereString( (String)map.get("keijo_make_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_like") != null && ((String)map.get("keijo_make_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg like '%" + conv.convertWhereString( (String)map.get("keijo_make_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_bef_like") != null && ((String)map.get("keijo_make_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg like '%" + conv.convertWhereString( (String)map.get("keijo_make_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_aft_like") != null && ((String)map.get("keijo_make_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg like '" + conv.convertWhereString( (String)map.get("keijo_make_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_in") != null && ((String)map.get("keijo_make_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_make_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_fg_not_in") != null && ((String)map.get("keijo_make_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_make_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// keijo_make_dt に対するWHERE区
+		if( map.get("keijo_make_dt_bef") != null && ((String)map.get("keijo_make_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt >= '" + conv.convertWhereString( (String)map.get("keijo_make_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_aft") != null && ((String)map.get("keijo_make_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt <= '" + conv.convertWhereString( (String)map.get("keijo_make_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt") != null && ((String)map.get("keijo_make_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt = '" + conv.convertWhereString( (String)map.get("keijo_make_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_like") != null && ((String)map.get("keijo_make_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt like '%" + conv.convertWhereString( (String)map.get("keijo_make_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_bef_like") != null && ((String)map.get("keijo_make_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt like '%" + conv.convertWhereString( (String)map.get("keijo_make_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_aft_like") != null && ((String)map.get("keijo_make_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt like '" + conv.convertWhereString( (String)map.get("keijo_make_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_in") != null && ((String)map.get("keijo_make_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_make_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("keijo_make_dt_not_in") != null && ((String)map.get("keijo_make_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("keijo_make_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("keijo_make_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// juryo_make_fg に対するWHERE区
+		if( map.get("juryo_make_fg_bef") != null && ((String)map.get("juryo_make_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg >= '" + conv.convertWhereString( (String)map.get("juryo_make_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_aft") != null && ((String)map.get("juryo_make_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg <= '" + conv.convertWhereString( (String)map.get("juryo_make_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg") != null && ((String)map.get("juryo_make_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg = '" + conv.convertWhereString( (String)map.get("juryo_make_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_like") != null && ((String)map.get("juryo_make_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg like '%" + conv.convertWhereString( (String)map.get("juryo_make_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_bef_like") != null && ((String)map.get("juryo_make_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg like '%" + conv.convertWhereString( (String)map.get("juryo_make_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_aft_like") != null && ((String)map.get("juryo_make_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg like '" + conv.convertWhereString( (String)map.get("juryo_make_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_in") != null && ((String)map.get("juryo_make_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("juryo_make_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_fg_not_in") != null && ((String)map.get("juryo_make_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("juryo_make_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// juryo_make_dt に対するWHERE区
+		if( map.get("juryo_make_dt_bef") != null && ((String)map.get("juryo_make_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt >= '" + conv.convertWhereString( (String)map.get("juryo_make_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_aft") != null && ((String)map.get("juryo_make_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt <= '" + conv.convertWhereString( (String)map.get("juryo_make_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt") != null && ((String)map.get("juryo_make_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt = '" + conv.convertWhereString( (String)map.get("juryo_make_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_like") != null && ((String)map.get("juryo_make_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt like '%" + conv.convertWhereString( (String)map.get("juryo_make_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_bef_like") != null && ((String)map.get("juryo_make_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt like '%" + conv.convertWhereString( (String)map.get("juryo_make_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_aft_like") != null && ((String)map.get("juryo_make_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt like '" + conv.convertWhereString( (String)map.get("juryo_make_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_in") != null && ((String)map.get("juryo_make_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("juryo_make_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("juryo_make_dt_not_in") != null && ((String)map.get("juryo_make_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("juryo_make_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("juryo_make_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_asn_make_fg に対するWHERE区
+		if( map.get("nohin_asn_make_fg_bef") != null && ((String)map.get("nohin_asn_make_fg_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg >= '" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_aft") != null && ((String)map.get("nohin_asn_make_fg_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg <= '" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg") != null && ((String)map.get("nohin_asn_make_fg")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg = '" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_like") != null && ((String)map.get("nohin_asn_make_fg_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg like '%" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_bef_like") != null && ((String)map.get("nohin_asn_make_fg_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg like '%" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_aft_like") != null && ((String)map.get("nohin_asn_make_fg_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg like '" + conv.convertWhereString( (String)map.get("nohin_asn_make_fg_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_in") != null && ((String)map.get("nohin_asn_make_fg_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_asn_make_fg_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_fg_not_in") != null && ((String)map.get("nohin_asn_make_fg_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_fg not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_asn_make_fg_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// nohin_asn_make_dt に対するWHERE区
+		if( map.get("nohin_asn_make_dt_bef") != null && ((String)map.get("nohin_asn_make_dt_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt >= '" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_aft") != null && ((String)map.get("nohin_asn_make_dt_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt <= '" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt") != null && ((String)map.get("nohin_asn_make_dt")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt = '" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_like") != null && ((String)map.get("nohin_asn_make_dt_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt like '%" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_bef_like") != null && ((String)map.get("nohin_asn_make_dt_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt like '%" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_aft_like") != null && ((String)map.get("nohin_asn_make_dt_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt like '" + conv.convertWhereString( (String)map.get("nohin_asn_make_dt_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_in") != null && ((String)map.get("nohin_asn_make_dt_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_asn_make_dt_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("nohin_asn_make_dt_not_in") != null && ((String)map.get("nohin_asn_make_dt_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("nohin_asn_make_dt not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("nohin_asn_make_dt_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// riyo_user_id に対するWHERE区
+		if( map.get("riyo_user_id_bef") != null && ((String)map.get("riyo_user_id_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id >= '" + conv.convertWhereString( (String)map.get("riyo_user_id_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_aft") != null && ((String)map.get("riyo_user_id_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id <= '" + conv.convertWhereString( (String)map.get("riyo_user_id_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id") != null && ((String)map.get("riyo_user_id")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id = '" + conv.convertWhereString( (String)map.get("riyo_user_id") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_like") != null && ((String)map.get("riyo_user_id_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id like '%" + conv.convertWhereString( (String)map.get("riyo_user_id_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_bef_like") != null && ((String)map.get("riyo_user_id_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id like '%" + conv.convertWhereString( (String)map.get("riyo_user_id_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_aft_like") != null && ((String)map.get("riyo_user_id_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id like '" + conv.convertWhereString( (String)map.get("riyo_user_id_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_in") != null && ((String)map.get("riyo_user_id_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id in ( '" + replaceAll(conv.convertWhereString( (String)map.get("riyo_user_id_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("riyo_user_id_not_in") != null && ((String)map.get("riyo_user_id_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("riyo_user_id not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("riyo_user_id_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// insert_ts に対するWHERE区
+		if( map.get("insert_ts_bef") != null && ((String)map.get("insert_ts_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts >= '" + conv.convertWhereString( (String)map.get("insert_ts_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_aft") != null && ((String)map.get("insert_ts_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts <= '" + conv.convertWhereString( (String)map.get("insert_ts_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts") != null && ((String)map.get("insert_ts")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts = '" + conv.convertWhereString( (String)map.get("insert_ts") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_like") != null && ((String)map.get("insert_ts_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts like '%" + conv.convertWhereString( (String)map.get("insert_ts_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_bef_like") != null && ((String)map.get("insert_ts_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts like '%" + conv.convertWhereString( (String)map.get("insert_ts_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_aft_like") != null && ((String)map.get("insert_ts_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts like '" + conv.convertWhereString( (String)map.get("insert_ts_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_in") != null && ((String)map.get("insert_ts_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts in ( '" + replaceAll(conv.convertWhereString( (String)map.get("insert_ts_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("insert_ts_not_in") != null && ((String)map.get("insert_ts_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("insert_ts not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("insert_ts_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+
+
+		// update_ts に対するWHERE区
+		if( map.get("update_ts_bef") != null && ((String)map.get("update_ts_bef")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts >= '" + conv.convertWhereString( (String)map.get("update_ts_bef") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_aft") != null && ((String)map.get("update_ts_aft")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts <= '" + conv.convertWhereString( (String)map.get("update_ts_aft") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts") != null && ((String)map.get("update_ts")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts = '" + conv.convertWhereString( (String)map.get("update_ts") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_like") != null && ((String)map.get("update_ts_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts like '%" + conv.convertWhereString( (String)map.get("update_ts_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_bef_like") != null && ((String)map.get("update_ts_bef_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts like '%" + conv.convertWhereString( (String)map.get("update_ts_bef_like") ) + "'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_aft_like") != null && ((String)map.get("update_ts_aft_like")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts like '" + conv.convertWhereString( (String)map.get("update_ts_aft_like") ) + "%'");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_in") != null && ((String)map.get("update_ts_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts in ( '" + replaceAll(conv.convertWhereString( (String)map.get("update_ts_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		if( map.get("update_ts_not_in") != null && ((String)map.get("update_ts_not_in")).trim().length() > 0 )
+		{
+			sb.append(whereStr);
+			sb.append("update_ts not in ( '" + replaceAll(conv.convertWhereString( (String)map.get("update_ts_not_in") ),",","','") + "' )");
+			whereStr = andStr;
+		}
+		sb.append(" order by ");
+		sb.append("data_denp_nb");
+		return sb.toString();
+	}
+
+	/**
+	 * 挿入用ＳＱＬの生成を行う。
+	 * 渡されたBEANをＤＢに挿入するためのＳＱＬ。
+	 * @param beanMst Object
+	 * @return String 生成されたＳＱＬ
+	 */
+	public String getInsertSql( Object beanMst )
+	{
+		boolean befKanma = false;
+		boolean aftKanma = false;
+		DBStringConvert conv = DBStringConvert.getDBStringConvert( getDatabaseProductName() );
+		DtNohinBean bean = (DtNohinBean)beanMst;
+		StringBuffer sb = new StringBuffer();
+		sb.append("insert into ");
+		sb.append("dt_nohin (");
+		if( bean.getDataDenpNb() != null && bean.getDataDenpNb().trim().length() != 0 )
+		{
+			befKanma = true;
+			sb.append(" data_denp_nb");
+		}
+		if( bean.getFileHeadNb() != null && bean.getFileHeadNb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" file_head_nb");
+		}
+		if( bean.getGaitoSystemKb() != null && bean.getGaitoSystemKb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" gaito_system_kb");
+		}
+		if( bean.getTenpoCd() != null && bean.getTenpoCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_cd");
+		}
+		if( bean.getTenhankuCd() != null && bean.getTenhankuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenhanku_cd");
+		}
+		if( bean.getLGyosyuCd() != null && bean.getLGyosyuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" l_gyosyu_cd");
+		}
+		if( bean.getSGyosyuCd() != null && bean.getSGyosyuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" s_gyosyu_cd");
+		}
+		if( bean.getLHankuCd() != null && bean.getLHankuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" l_hanku_cd");
+		}
+		if( bean.getTorihikisakiCd() != null && bean.getTorihikisakiCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_cd");
+		}
+		if( bean.getNohinDt() != null && bean.getNohinDt().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" nohin_dt");
+		}
+		if( bean.getDenpyoNb() != null && bean.getDenpyoNb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" denpyo_nb");
+		}
+		if( bean.getHachuDt() != null && bean.getHachuDt().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" hachu_dt");
+		}
+		if( bean.getKbBusyoKb() != null && bean.getKbBusyoKb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" kb_busyo_kb");
+		}
+		if( bean.getBinNb() != null && bean.getBinNb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" bin_nb");
+		}
+		if( bean.getTenpoNa() != null && bean.getTenpoNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_na");
+		}
+		if( bean.getTenpoKa() != null && bean.getTenpoKa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_ka");
+		}
+		if( bean.getTenhankuNa() != null && bean.getTenhankuNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenhanku_na");
+		}
+		if( bean.getSGyosyuNa() != null && bean.getSGyosyuNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" s_gyosyu_na");
+		}
+		if( bean.getTorihikisakiNa() != null && bean.getTorihikisakiNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_na");
+		}
+		if( bean.getTorihikisakiKa() != null && bean.getTorihikisakiKa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_ka");
+		}
+		if( befKanma ) sb.append(",");
+		sb.append(" genka_kei_vl");
+		sb.append(",");
+		sb.append(" baika_kei_vl");
+		sb.append(",");
+		sb.append(" tei_genka_kei_vl");
+		sb.append(",");
+		sb.append(" tei_baika_kei_vl");
+		if( bean.getTeiFg() != null && bean.getTeiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tei_fg");
+		}
+		if( bean.getTeiseiRuyuKb() != null && bean.getTeiseiRuyuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" teisei_ruyu_kb");
+		}
+		if( bean.getSeisenFg() != null && bean.getSeisenFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" seisen_fg");
+		}
+		if( bean.getKbSobaKb() != null && bean.getKbSobaKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kb_soba_kb");
+		}
+		if( bean.getHaisoKb() != null && bean.getHaisoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haiso_kb");
+		}
+		if( bean.getDenpyoKb() != null && bean.getDenpyoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" denpyo_kb");
+		}
+		if( bean.getZeiKb() != null && bean.getZeiKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" zei_kb");
+		}
+		if( bean.getHachuKb() != null && bean.getHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hachu_kb");
+		}
+		if( bean.getTenpoHachuKb() != null && bean.getTenpoHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tenpo_hachu_kb");
+		}
+		if( bean.getIkatuDenpFg() != null && bean.getIkatuDenpFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" ikatu_denp_fg");
+		}
+		if( bean.getSyohinThemeNa() != null && bean.getSyohinThemeNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" syohin_theme_na");
+		}
+		if( bean.getHaisosakiCd() != null && bean.getHaisosakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisosaki_cd");
+		}
+		if( bean.getHaisosakiNa() != null && bean.getHaisosakiNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisosaki_na");
+		}
+		if( bean.getNohinCenterCd() != null && bean.getNohinCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_center_cd");
+		}
+		if( bean.getKeiyuCenterCd() != null && bean.getKeiyuCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keiyu_center_cd");
+		}
+		if( bean.getTenhaiCenterCd() != null && bean.getTenhaiCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tenhai_center_cd");
+		}
+		if( bean.getZaikoCenterCd() != null && bean.getZaikoCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" zaiko_center_cd");
+		}
+		if( bean.getNohinSyoriKb() != null && bean.getNohinSyoriKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_syori_kb");
+		}
+		sb.append(",");
+		sb.append(" nohin_list_qt");
+		if( bean.getHaisinsakiCd() != null && bean.getHaisinsakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisinsaki_cd");
+		}
+		if( bean.getHojinCd() != null && bean.getHojinCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hojin_cd");
+		}
+		if( bean.getHojinNa() != null && bean.getHojinNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hojin_na");
+		}
+		if( bean.getKakuteiFg() != null && bean.getKakuteiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_fg");
+		}
+		if( bean.getKakuteiUserId() != null && bean.getKakuteiUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_user_id");
+		}
+		if( bean.getKakuteiTs() != null && bean.getKakuteiTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_ts");
+		}
+		if( bean.getKeijoDt() != null && bean.getKeijoDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_dt");
+		}
+		if( bean.getKeijoMakeFg() != null && bean.getKeijoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_make_fg");
+		}
+		if( bean.getKeijoMakeDt() != null && bean.getKeijoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_make_dt");
+		}
+		if( bean.getJuryoMakeFg() != null && bean.getJuryoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" juryo_make_fg");
+		}
+		if( bean.getJuryoMakeDt() != null && bean.getJuryoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" juryo_make_dt");
+		}
+		if( bean.getNohinAsnMakeFg() != null && bean.getNohinAsnMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_asn_make_fg");
+		}
+		if( bean.getNohinAsnMakeDt() != null && bean.getNohinAsnMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_asn_make_dt");
+		}
+		if( bean.getRiyoUserId() != null && bean.getRiyoUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" riyo_user_id");
+		}
+		if( bean.getInsertTs() != null && bean.getInsertTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" insert_ts");
+		}
+		if( bean.getUpdateTs() != null && bean.getUpdateTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" update_ts");
+		}
+
+
+		sb.append(")Values(");
+
+
+		if( bean.getDataDenpNb() != null && bean.getDataDenpNb().trim().length() != 0 )
+		{
+			aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getDataDenpNb() ) + "'");
+		}
+		if( bean.getFileHeadNb() != null && bean.getFileHeadNb().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getFileHeadNb() ) + "'");
+		}
+		if( bean.getGaitoSystemKb() != null && bean.getGaitoSystemKb().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getGaitoSystemKb() ) + "'");
+		}
+		if( bean.getTenpoCd() != null && bean.getTenpoCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTenpoCd() ) + "'");
+		}
+		if( bean.getTenhankuCd() != null && bean.getTenhankuCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTenhankuCd() ) + "'");
+		}
+		if( bean.getLGyosyuCd() != null && bean.getLGyosyuCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getLGyosyuCd() ) + "'");
+		}
+		if( bean.getSGyosyuCd() != null && bean.getSGyosyuCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getSGyosyuCd() ) + "'");
+		}
+		if( bean.getLHankuCd() != null && bean.getLHankuCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getLHankuCd() ) + "'");
+		}
+		if( bean.getTorihikisakiCd() != null && bean.getTorihikisakiCd().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTorihikisakiCd() ) + "'");
+		}
+		if( bean.getNohinDt() != null && bean.getNohinDt().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getNohinDt() ) + "'");
+		}
+		if( bean.getDenpyoNb() != null && bean.getDenpyoNb().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getDenpyoNb() ) + "'");
+		}
+		if( bean.getHachuDt() != null && bean.getHachuDt().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getHachuDt() ) + "'");
+		}
+		if( bean.getKbBusyoKb() != null && bean.getKbBusyoKb().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getKbBusyoKb() ) + "'");
+		}
+		if( bean.getBinNb() != null && bean.getBinNb().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getBinNb() ) + "'");
+		}
+		if( bean.getTenpoNa() != null && bean.getTenpoNa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTenpoNa() ) + "'");
+		}
+		if( bean.getTenpoKa() != null && bean.getTenpoKa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTenpoKa() ) + "'");
+		}
+		if( bean.getTenhankuNa() != null && bean.getTenhankuNa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTenhankuNa() ) + "'");
+		}
+		if( bean.getSGyosyuNa() != null && bean.getSGyosyuNa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getSGyosyuNa() ) + "'");
+		}
+		if( bean.getTorihikisakiNa() != null && bean.getTorihikisakiNa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTorihikisakiNa() ) + "'");
+		}
+		if( bean.getTorihikisakiKa() != null && bean.getTorihikisakiKa().trim().length() != 0 )
+		{
+			if( aftKanma ) sb.append(","); else aftKanma = true;
+			sb.append("'" + conv.convertString( bean.getTorihikisakiKa() ) + "'");
+		}
+		if( aftKanma ) sb.append(",");
+		sb.append( bean.getGenkaKeiVlString());
+		sb.append(",");
+		sb.append( bean.getBaikaKeiVlString());
+		sb.append(",");
+		sb.append( bean.getTeiGenkaKeiVlString());
+		sb.append(",");
+		sb.append( bean.getTeiBaikaKeiVlString());
+		if( bean.getTeiFg() != null && bean.getTeiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getTeiFg() ) + "'");
+		}
+		if( bean.getTeiseiRuyuKb() != null && bean.getTeiseiRuyuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getTeiseiRuyuKb() ) + "'");
+		}
+		if( bean.getSeisenFg() != null && bean.getSeisenFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getSeisenFg() ) + "'");
+		}
+		if( bean.getKbSobaKb() != null && bean.getKbSobaKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKbSobaKb() ) + "'");
+		}
+		if( bean.getHaisoKb() != null && bean.getHaisoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHaisoKb() ) + "'");
+		}
+		if( bean.getDenpyoKb() != null && bean.getDenpyoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getDenpyoKb() ) + "'");
+		}
+		if( bean.getZeiKb() != null && bean.getZeiKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getZeiKb() ) + "'");
+		}
+		if( bean.getHachuKb() != null && bean.getHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHachuKb() ) + "'");
+		}
+		if( bean.getTenpoHachuKb() != null && bean.getTenpoHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getTenpoHachuKb() ) + "'");
+		}
+		if( bean.getIkatuDenpFg() != null && bean.getIkatuDenpFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getIkatuDenpFg() ) + "'");
+		}
+		if( bean.getSyohinThemeNa() != null && bean.getSyohinThemeNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getSyohinThemeNa() ) + "'");
+		}
+		if( bean.getHaisosakiCd() != null && bean.getHaisosakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHaisosakiCd() ) + "'");
+		}
+		if( bean.getHaisosakiNa() != null && bean.getHaisosakiNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHaisosakiNa() ) + "'");
+		}
+		if( bean.getNohinCenterCd() != null && bean.getNohinCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getNohinCenterCd() ) + "'");
+		}
+		if( bean.getKeiyuCenterCd() != null && bean.getKeiyuCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKeiyuCenterCd() ) + "'");
+		}
+		if( bean.getTenhaiCenterCd() != null && bean.getTenhaiCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getTenhaiCenterCd() ) + "'");
+		}
+		if( bean.getZaikoCenterCd() != null && bean.getZaikoCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getZaikoCenterCd() ) + "'");
+		}
+		if( bean.getNohinSyoriKb() != null && bean.getNohinSyoriKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getNohinSyoriKb() ) + "'");
+		}
+		sb.append(",");
+		sb.append( bean.getNohinListQtString());
+		if( bean.getHaisinsakiCd() != null && bean.getHaisinsakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHaisinsakiCd() ) + "'");
+		}
+		if( bean.getHojinCd() != null && bean.getHojinCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHojinCd() ) + "'");
+		}
+		if( bean.getHojinNa() != null && bean.getHojinNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getHojinNa() ) + "'");
+		}
+		if( bean.getKakuteiFg() != null && bean.getKakuteiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKakuteiFg() ) + "'");
+		}
+		if( bean.getKakuteiUserId() != null && bean.getKakuteiUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKakuteiUserId() ) + "'");
+		}
+		if( bean.getKakuteiTs() != null && bean.getKakuteiTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKakuteiTs() ) + "'");
+		}
+		if( bean.getKeijoDt() != null && bean.getKeijoDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKeijoDt() ) + "'");
+		}
+		if( bean.getKeijoMakeFg() != null && bean.getKeijoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKeijoMakeFg() ) + "'");
+		}
+		if( bean.getKeijoMakeDt() != null && bean.getKeijoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getKeijoMakeDt() ) + "'");
+		}
+		if( bean.getJuryoMakeFg() != null && bean.getJuryoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getJuryoMakeFg() ) + "'");
+		}
+		if( bean.getJuryoMakeDt() != null && bean.getJuryoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getJuryoMakeDt() ) + "'");
+		}
+		if( bean.getNohinAsnMakeFg() != null && bean.getNohinAsnMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getNohinAsnMakeFg() ) + "'");
+		}
+		if( bean.getNohinAsnMakeDt() != null && bean.getNohinAsnMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getNohinAsnMakeDt() ) + "'");
+		}
+		if( bean.getRiyoUserId() != null && bean.getRiyoUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getRiyoUserId() ) + "'");
+		}
+		if( bean.getInsertTs() != null && bean.getInsertTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getInsertTs() ) + "'");
+		}
+		if( bean.getUpdateTs() != null && bean.getUpdateTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append("'" + conv.convertString( bean.getUpdateTs() ) + "'");
+		}
+		sb.append(")");
+		return sb.toString();
+	}
+
+	/**
+	 * 更新用ＳＱＬの生成を行う。
+	 * 渡されたBEANを元にＤＢを更新するためのＳＱＬ。
+	 * @param beanMst Object
+	 * @return String 生成されたＳＱＬ
+	 */
+	public String getUpdateSql( Object beanMst )
+	{
+		boolean befKanma = false;
+		boolean whereAnd = false;
+		DBStringConvert conv = DBStringConvert.getDBStringConvert( getDatabaseProductName() );
+		DtNohinBean bean = (DtNohinBean)beanMst;
+		StringBuffer sb = new StringBuffer();
+		sb.append("update ");
+		sb.append("dt_nohin set ");
+		if( bean.getFileHeadNb() != null && bean.getFileHeadNb().trim().length() != 0 )
+		{
+			befKanma = true;
+			sb.append(" file_head_nb = ");
+			sb.append("'" + conv.convertString( bean.getFileHeadNb() ) + "'");
+		}
+		if( bean.getGaitoSystemKb() != null && bean.getGaitoSystemKb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" gaito_system_kb = ");
+			sb.append("'" + conv.convertString( bean.getGaitoSystemKb() ) + "'");
+		}
+		if( bean.getTenpoCd() != null && bean.getTenpoCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_cd = ");
+			sb.append("'" + conv.convertString( bean.getTenpoCd() ) + "'");
+		}
+		if( bean.getTenhankuCd() != null && bean.getTenhankuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenhanku_cd = ");
+			sb.append("'" + conv.convertString( bean.getTenhankuCd() ) + "'");
+		}
+		if( bean.getLGyosyuCd() != null && bean.getLGyosyuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" l_gyosyu_cd = ");
+			sb.append("'" + conv.convertString( bean.getLGyosyuCd() ) + "'");
+		}
+		if( bean.getSGyosyuCd() != null && bean.getSGyosyuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" s_gyosyu_cd = ");
+			sb.append("'" + conv.convertString( bean.getSGyosyuCd() ) + "'");
+		}
+		if( bean.getLHankuCd() != null && bean.getLHankuCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" l_hanku_cd = ");
+			sb.append("'" + conv.convertString( bean.getLHankuCd() ) + "'");
+		}
+		if( bean.getTorihikisakiCd() != null && bean.getTorihikisakiCd().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_cd = ");
+			sb.append("'" + conv.convertString( bean.getTorihikisakiCd() ) + "'");
+		}
+		if( bean.getNohinDt() != null && bean.getNohinDt().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" nohin_dt = ");
+			sb.append("'" + conv.convertString( bean.getNohinDt() ) + "'");
+		}
+		if( bean.getDenpyoNb() != null && bean.getDenpyoNb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" denpyo_nb = ");
+			sb.append("'" + conv.convertString( bean.getDenpyoNb() ) + "'");
+		}
+		if( bean.getHachuDt() != null && bean.getHachuDt().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" hachu_dt = ");
+			sb.append("'" + conv.convertString( bean.getHachuDt() ) + "'");
+		}
+		if( bean.getKbBusyoKb() != null && bean.getKbBusyoKb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" kb_busyo_kb = ");
+			sb.append("'" + conv.convertString( bean.getKbBusyoKb() ) + "'");
+		}
+		if( bean.getBinNb() != null && bean.getBinNb().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" bin_nb = ");
+			sb.append("'" + conv.convertString( bean.getBinNb() ) + "'");
+		}
+		if( bean.getTenpoNa() != null && bean.getTenpoNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_na = ");
+			sb.append("'" + conv.convertString( bean.getTenpoNa() ) + "'");
+		}
+		if( bean.getTenpoKa() != null && bean.getTenpoKa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenpo_ka = ");
+			sb.append("'" + conv.convertString( bean.getTenpoKa() ) + "'");
+		}
+		if( bean.getTenhankuNa() != null && bean.getTenhankuNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" tenhanku_na = ");
+			sb.append("'" + conv.convertString( bean.getTenhankuNa() ) + "'");
+		}
+		if( bean.getSGyosyuNa() != null && bean.getSGyosyuNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" s_gyosyu_na = ");
+			sb.append("'" + conv.convertString( bean.getSGyosyuNa() ) + "'");
+		}
+		if( bean.getTorihikisakiNa() != null && bean.getTorihikisakiNa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_na = ");
+			sb.append("'" + conv.convertString( bean.getTorihikisakiNa() ) + "'");
+		}
+		if( bean.getTorihikisakiKa() != null && bean.getTorihikisakiKa().trim().length() != 0 )
+		{
+			if( befKanma ) sb.append(","); else befKanma = true;
+			sb.append(" torihikisaki_ka = ");
+			sb.append("'" + conv.convertString( bean.getTorihikisakiKa() ) + "'");
+		}
+		if( befKanma ) sb.append(",");
+		sb.append(" genka_kei_vl = ");
+		sb.append( bean.getGenkaKeiVlString());
+		sb.append(",");
+		sb.append(" baika_kei_vl = ");
+		sb.append( bean.getBaikaKeiVlString());
+		sb.append(",");
+		sb.append(" tei_genka_kei_vl = ");
+		sb.append( bean.getTeiGenkaKeiVlString());
+		sb.append(",");
+		sb.append(" tei_baika_kei_vl = ");
+		sb.append( bean.getTeiBaikaKeiVlString());
+		if( bean.getTeiFg() != null && bean.getTeiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tei_fg = ");
+			sb.append("'" + conv.convertString( bean.getTeiFg() ) + "'");
+		}
+		if( bean.getTeiseiRuyuKb() != null && bean.getTeiseiRuyuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" teisei_ruyu_kb = ");
+			sb.append("'" + conv.convertString( bean.getTeiseiRuyuKb() ) + "'");
+		}
+		if( bean.getSeisenFg() != null && bean.getSeisenFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" seisen_fg = ");
+			sb.append("'" + conv.convertString( bean.getSeisenFg() ) + "'");
+		}
+		if( bean.getKbSobaKb() != null && bean.getKbSobaKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kb_soba_kb = ");
+			sb.append("'" + conv.convertString( bean.getKbSobaKb() ) + "'");
+		}
+		if( bean.getHaisoKb() != null && bean.getHaisoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haiso_kb = ");
+			sb.append("'" + conv.convertString( bean.getHaisoKb() ) + "'");
+		}
+		if( bean.getDenpyoKb() != null && bean.getDenpyoKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" denpyo_kb = ");
+			sb.append("'" + conv.convertString( bean.getDenpyoKb() ) + "'");
+		}
+		if( bean.getZeiKb() != null && bean.getZeiKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" zei_kb = ");
+			sb.append("'" + conv.convertString( bean.getZeiKb() ) + "'");
+		}
+		if( bean.getHachuKb() != null && bean.getHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hachu_kb = ");
+			sb.append("'" + conv.convertString( bean.getHachuKb() ) + "'");
+		}
+		if( bean.getTenpoHachuKb() != null && bean.getTenpoHachuKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tenpo_hachu_kb = ");
+			sb.append("'" + conv.convertString( bean.getTenpoHachuKb() ) + "'");
+		}
+		if( bean.getIkatuDenpFg() != null && bean.getIkatuDenpFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" ikatu_denp_fg = ");
+			sb.append("'" + conv.convertString( bean.getIkatuDenpFg() ) + "'");
+		}
+		if( bean.getSyohinThemeNa() != null && bean.getSyohinThemeNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" syohin_theme_na = ");
+			sb.append("'" + conv.convertString( bean.getSyohinThemeNa() ) + "'");
+		}
+		if( bean.getHaisosakiCd() != null && bean.getHaisosakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisosaki_cd = ");
+			sb.append("'" + conv.convertString( bean.getHaisosakiCd() ) + "'");
+		}
+		if( bean.getHaisosakiNa() != null && bean.getHaisosakiNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisosaki_na = ");
+			sb.append("'" + conv.convertString( bean.getHaisosakiNa() ) + "'");
+		}
+		if( bean.getNohinCenterCd() != null && bean.getNohinCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_center_cd = ");
+			sb.append("'" + conv.convertString( bean.getNohinCenterCd() ) + "'");
+		}
+		if( bean.getKeiyuCenterCd() != null && bean.getKeiyuCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keiyu_center_cd = ");
+			sb.append("'" + conv.convertString( bean.getKeiyuCenterCd() ) + "'");
+		}
+		if( bean.getTenhaiCenterCd() != null && bean.getTenhaiCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" tenhai_center_cd = ");
+			sb.append("'" + conv.convertString( bean.getTenhaiCenterCd() ) + "'");
+		}
+		if( bean.getZaikoCenterCd() != null && bean.getZaikoCenterCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" zaiko_center_cd = ");
+			sb.append("'" + conv.convertString( bean.getZaikoCenterCd() ) + "'");
+		}
+		if( bean.getNohinSyoriKb() != null && bean.getNohinSyoriKb().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_syori_kb = ");
+			sb.append("'" + conv.convertString( bean.getNohinSyoriKb() ) + "'");
+		}
+		sb.append(",");
+		sb.append(" nohin_list_qt = ");
+		sb.append( bean.getNohinListQtString());
+		if( bean.getHaisinsakiCd() != null && bean.getHaisinsakiCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" haisinsaki_cd = ");
+			sb.append("'" + conv.convertString( bean.getHaisinsakiCd() ) + "'");
+		}
+		if( bean.getHojinCd() != null && bean.getHojinCd().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hojin_cd = ");
+			sb.append("'" + conv.convertString( bean.getHojinCd() ) + "'");
+		}
+		if( bean.getHojinNa() != null && bean.getHojinNa().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" hojin_na = ");
+			sb.append("'" + conv.convertString( bean.getHojinNa() ) + "'");
+		}
+		if( bean.getKakuteiFg() != null && bean.getKakuteiFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_fg = ");
+			sb.append("'" + conv.convertString( bean.getKakuteiFg() ) + "'");
+		}
+		if( bean.getKakuteiUserId() != null && bean.getKakuteiUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_user_id = ");
+			sb.append("'" + conv.convertString( bean.getKakuteiUserId() ) + "'");
+		}
+		if( bean.getKakuteiTs() != null && bean.getKakuteiTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" kakutei_ts = ");
+			sb.append("'" + conv.convertString( bean.getKakuteiTs() ) + "'");
+		}
+		if( bean.getKeijoDt() != null && bean.getKeijoDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_dt = ");
+			sb.append("'" + conv.convertString( bean.getKeijoDt() ) + "'");
+		}
+		if( bean.getKeijoMakeFg() != null && bean.getKeijoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_make_fg = ");
+			sb.append("'" + conv.convertString( bean.getKeijoMakeFg() ) + "'");
+		}
+		if( bean.getKeijoMakeDt() != null && bean.getKeijoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" keijo_make_dt = ");
+			sb.append("'" + conv.convertString( bean.getKeijoMakeDt() ) + "'");
+		}
+		if( bean.getJuryoMakeFg() != null && bean.getJuryoMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" juryo_make_fg = ");
+			sb.append("'" + conv.convertString( bean.getJuryoMakeFg() ) + "'");
+		}
+		if( bean.getJuryoMakeDt() != null && bean.getJuryoMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" juryo_make_dt = ");
+			sb.append("'" + conv.convertString( bean.getJuryoMakeDt() ) + "'");
+		}
+		if( bean.getNohinAsnMakeFg() != null && bean.getNohinAsnMakeFg().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_asn_make_fg = ");
+			sb.append("'" + conv.convertString( bean.getNohinAsnMakeFg() ) + "'");
+		}
+		if( bean.getNohinAsnMakeDt() != null && bean.getNohinAsnMakeDt().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" nohin_asn_make_dt = ");
+			sb.append("'" + conv.convertString( bean.getNohinAsnMakeDt() ) + "'");
+		}
+		if( bean.getRiyoUserId() != null && bean.getRiyoUserId().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" riyo_user_id = ");
+			sb.append("'" + conv.convertString( bean.getRiyoUserId() ) + "'");
+		}
+		if( bean.getInsertTs() != null && bean.getInsertTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" insert_ts = ");
+			sb.append("'" + conv.convertString( bean.getInsertTs() ) + "'");
+		}
+		if( bean.getUpdateTs() != null && bean.getUpdateTs().trim().length() != 0 )
+		{
+			sb.append(",");
+			sb.append(" update_ts = ");
+			sb.append("'" + conv.convertString( bean.getUpdateTs() ) + "'");
+		}
+
+
+		sb.append(" WHERE");
+
+
+		if( bean.getDataDenpNb() != null && bean.getDataDenpNb().trim().length() != 0 )
+		{
+			whereAnd = true;
+			sb.append(" data_denp_nb = ");
+			sb.append("'" + conv.convertWhereString( bean.getDataDenpNb() ) + "'");
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 削除用ＳＱＬの生成を行う。
+	 * 渡されたBEANをＤＢから削除するためのＳＱＬ。
+	 * @param beanMst Object
+	 * @return String 生成されたＳＱＬ
+	 */
+	public String getDeleteSql( Object beanMst )
+	{
+		DBStringConvert conv = DBStringConvert.getDBStringConvert( getDatabaseProductName() );
+		DtNohinBean bean = (DtNohinBean)beanMst;
+		StringBuffer sb = new StringBuffer();
+		sb.append("delete from ");
+		sb.append("dt_nohin where ");
+		sb.append(" data_denp_nb = ");
+		sb.append("'" + conv.convertWhereString( bean.getDataDenpNb() ) + "'");
+		return sb.toString();
+	}
+
+	/**
+	 * JDK1.4からは使用できるようになったString.replaceAllをJDK1.3以前用に作成する。
+	 * @param base
+	 * @param before
+	 * @param after
+	 * @return
+	 */
+	protected String replaceAll( String base, String before, String after )
+	{
+		if( base == null )
+			return base;
+		int pos = base.lastIndexOf(before);
+		if( pos < 0 )
+			return base;
+		int befLen = before.length();
+		StringBuffer sb = new StringBuffer( base );
+		while( pos >= 0 && (pos = base.lastIndexOf(before, pos)) >= 0 )
+		{
+			sb.delete(pos,pos + befLen);
+			sb.insert(pos, after);
+			pos--;
+		}
+		return sb.toString();
+	}
+}

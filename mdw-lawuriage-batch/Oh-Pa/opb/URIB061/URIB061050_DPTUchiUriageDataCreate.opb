@@ -1,0 +1,329 @@
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　DPT打ち売上データ集計処理                             #
+//#　ジョブＩＤ　　　：　URIB061050                                            #
+//#　プログラムＩＤ　：　DPTUchiUriageDataCreate                               #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.05.11                                            #
+//#                                                                            #
+//#　処理概要　：　DPT打ち売上データ集計処理                                   #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　Commonファイルパス                                              #
+//#　　%2　―　マクロファイルパス                                              #
+//#　　%3　―　D5Tファイルパス                                                 #
+//#　　%4　―　CSVファイルパス                                                 #
+//#　　%5　―　カタログファイルパス                                            #
+//#　　%6　―　法人コードパス                                                  #
+//#　コメント　：　(前提条件)                                                  #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.05.11  松本       新規作成                                   #
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#　　V1.2  2009.07.03  VJC.福永   R_TENPO.DELETE項目削除対応                 #
+//#　　V1.3  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+//#　　V1.4  2009.07.10  VJC.福永   会計用店DPTマスタの空白対応                #
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #
+//#　　V1.7  2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #
+//#　　V1.8  2010.09.29  VJC.井関   店DPTマスタ参照方法変更バグ対応            #
+//##############################################################################
+
+
+//##########################################################################
+$echo ■クリア
+//##########################################################################
+$ClearWS()
+$ParaAllClear()
+
+
+//##########################################################################
+$echo ■パラメーターセット
+//##########################################################################
+//#Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+//#マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+//#D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+//#CSVパス
+$ParaSet("%CSV_PATH",%4)
+//#カタログパス
+$ParaSet("%CTLG_PATH",%5)
+//#法人コード
+$ParaSet("%HOJIN_CD",%6)
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#出力パス
+$ParaSet("%OUT_PATH",%7)
+//#ファンクションID
+$ParaSet("%FUNC_ID","URIB_061050")
+
+
+//##########################################################################
+$echo ■開始ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061050 DPT打ち売上データ集計処理 処理を開始します","=END=")
+
+
+//##########################################################################
+$echo ■テーブルファイルをロード
+//##########################################################################
+$Load("%D5T_PATH","SYSTEM_CONTROL")
+$Load("%D5T_PATH","R_TENPO")
+$Load("%D5T_PATH","R_FI_TENPO_BUNRUI1")
+//#　　V1.4  2009.07.10  VJC.福永   会計用店DPTマスタの空白対応                #
+$Calc("R_FI_TENPO_BUNRUI1","TENPO_CD","1","*","$RTrim($@TENPO_CD)","1")
+$Calc("R_FI_TENPO_BUNRUI1","BUNRUI1_CD","1","*","$RTrim($@BUNRUI1_CD)","1")
+$Load("%D5T_PATH","WK_TANPIN_MEI")
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(V1.5で追加されたDICTIONARY_CONTROLテーブルのロード部を削除)
+
+//##########################################################################
+$echo ■ 直近有効日の店DPTマスタを抽出
+//##########################################################################
+//#　　V1.7  2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #START 直近有効日の店DPTマスタを抽出
+//#処理会計月を取得
+$SubExec("%COMMON_PATH","GetKaikeiYM.opb","=BEGIN=","%HOJIN_CD","%D5T_PATH","=END=")
+$RenameColumn("R_CALENDAR","START_DT","KANRI_DT")
+$Rename("DT_KANRI_DT","R_CALENDAR")
+//# 終了日を転送
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_FI_TENPO_BUNRUI1","DT_KANRI_DT","1","1","END_DT","=END=")
+//# バッチ日付を転送
+$SubExec("%COMMON_PATH","AppendSystemControl.opb","=BEGIN=","R_FI_TENPO_BUNRUI1","1","URIAGE","BATCH_DT","=END=")
+//#会計月終了日とバッチ日付を比較し、若い日付を採用
+$AddRealColumn("R_FI_TENPO_BUNRUI1","[RecNo]","TARGET_DT","String")
+$Calc("R_FI_TENPO_BUNRUI1","TARGET_DT","1","*","$IF(>=(StrToInt($@BATCH_DT),StrToInt($@END_DT)),$@END_DT,$@BATCH_DT)","1")
+//# 法人コード、有効日、削除フラグで絞り込む
+$MultiSearch("R_FI_TENPO_BUNRUI1","1","""COMP_CD"" = '%HOJIN_CD' AND ""YUKO_DT"" <= ""TARGET_DT""")
+$ParaSet("%R_FI_TENPO_BUNRUI1_YUKO_CUR","__SID")
+$Sort("R_FI_TENPO_BUNRUI1","YUKO_DT","%R_FI_TENPO_BUNRUI1_YUKO_CUR","DSC")
+$ParaSet("%R_FI_TENPO_BUNRUI1_SORT_CUR","__SID")
+//# 一番新しい有効日のレコードを抽出
+$ExUnique("R_FI_TENPO_BUNRUI1","%R_FI_TENPO_BUNRUI1_SORT_CUR","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","N")
+$ParaSet("%R_FI_TENPO_BUNRUI1_UNIQUE_CUR","__SID")
+//# 一番新しい有効日のレコード以外を抽出し、削除
+$SetSUB("R_FI_TENPO_BUNRUI1","1","%R_FI_TENPO_BUNRUI1_UNIQUE_CUR")
+$ParaSet("%R_FI_TENPO_BUNRUI1_DLT_CUR","__SID")
+$DeleteRow("R_FI_TENPO_BUNRUI1","1","*","%R_FI_TENPO_BUNRUI1_DLT_CUR")
+//# Cursorを1のみとする。
+$DelAllCursors("R_FI_TENPO_BUNRUI1")
+//#　　V1.7  2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #E N D 直近有効日の店DPTマスタを抽出
+
+//##########################################################################
+$echo ■定数を取得
+//##########################################################################
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","R_TENPO","1","TENPO_KB_EIGYO","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","R_TENPO","1","DELETE_FG_NORMAL","=END=")
+
+
+//##########################################################################
+$echo ■システムコントロールマスタからバッチ日付を取得
+//##########################################################################
+//#売上計上日の取得
+//#　　V1.3  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'URIAGE' AND ""PARAMETER_ID"" = 'BATCH_DT'")
+$ParaSet("%SYSTEM_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%SYSTEM_TARGET_CUR","売上計上日")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_TENPO","SYSTEM_CONTROL","1","%SYSTEM_TARGET_CUR","PARAMETER_TX","=END=")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_FI_TENPO_BUNRUI1","SYSTEM_CONTROL","1","%SYSTEM_TARGET_CUR","PARAMETER_TX","=END=")
+
+//##########################################################################
+$echo ■対象データを抽出
+//##########################################################################
+//#店舗マスタの有効行を取得
+//#$MultiSearch("R_TENPO","1","""HOJIN_CD"" = '%HOJIN_CD' AND ""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""HEITEN_DT"" >= ""PARAMETER_TX"" AND ""TENPO_KB"" = ""TENPO_KB_EIGYO"" AND ""DELETE_FG"" = ""DELETE_FG_NORMAL""")
+//#　　V1.2  2009.07.03  VJC.福永   R_TENPO.DELETE項目削除対応                 #
+//$MultiSearch("R_TENPO","1","""HOJIN_CD"" = '%HOJIN_CD' AND ""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""TENPO_KB"" = ""TENPO_KB_EIGYO"" AND ""DELETE_FG"" = ""DELETE_FG_NORMAL""")
+$MultiSearch("R_TENPO","1","""HOJIN_CD"" = '%HOJIN_CD' AND ""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""TENPO_KB"" = ""TENPO_KB_EIGYO""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("R_TENPO","%TMP_TARGET_CUR","有効レコード")
+
+//#店舗マスタと結合
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_TENPO","1","%TMP_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","HOJIN_CD","TENPO_CD","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","店舗マスタと結合")
+
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_TENPO","__SID")
+$ExtCursor("WK_TANPIN_MEI_TENPO","WK_TANPIN_MEI","%ERR_TBL_TENPO","N","=BEGIN=","COMP_CD","TENPO_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TENPO_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_TENPO","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TENPO_CD","BUNRUI1_CD","String")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_TENPO","MESSAGE","1","*","店舗コードが店舗マスタに存在しません","1")
+
+$ParaSet("%ERR_TBL_TENPO","WK_TANPIN_MEI_TENPO")
+
+//# -----------------------------------------------------
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+
+//#店DPTマスタの有効行を取得
+$MultiSearch("R_FI_TENPO_BUNRUI1","1","""COMP_CD"" = '%HOJIN_CD' AND ""YUKO_DT"" <= ""PARAMETER_TX""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("R_FI_TENPO_BUNRUI1","%TMP_TARGET_CUR","有効レコード")
+
+//#店DPTマスタと結合
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_TENPO_BUNRUI1","%MAIN_TARGET_CUR","%TMP_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","店DPTマスタと結合")
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_DPT","__SID")
+$ExtCursor("WK_TANPIN_MEI_DPT","WK_TANPIN_MEI","%ERR_TBL_DPT","N","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_DPT","BUNRUI1_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_DPT","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_DPT","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_DPT","MESSAGE","1","*","DPTコードが会計用店DPTマスタに存在しません","1")
+
+//#店舗マスタのアンマッチと結合
+$Union("WK_TANPIN_MEI_REAL","WK_TANPIN_MEI_TENPO","WK_TANPIN_MEI_DPT","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+$ParaSet("%ERR_TBL_DPT","WK_TANPIN_MEI_DPT")
+$ParaSet("%ERR_TBL","WK_TANPIN_MEI_REAL")
+
+//# レコード有り無しを判定するために法人コードの最大値を取る(０件なら取得レコード無し)
+$XSUMNumeric("PARAM","%ERR_TBL","1","=BEGIN=","=END=","=BEGIN=","COMP_CD","0","1","0","-1","0","0","0","0","0","0","=END=")
+//# テーブル名
+$AddRealColumn("PARAM","[RecNo]","PARAM1","String")
+$Fill("PARAM","PARAM1","1","*","%ERR_TBL","1")
+//# 保存ファイル名
+$AddRealColumn("PARAM","PARAM1","PARAM2","String")
+$Calc("PARAM","PARAM2","1","*","$&($&($&($""%FUNC_ID"",$""ErrLog_""),$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))),$"".csv"")","1")
+
+//# LOGパス
+$AddRealColumn("PARAM","PARAM2","PARAM3","String")
+$Fill("PARAM","PARAM3","1","*","%CSV_PATH","1")
+
+//#パラメータ用CSV出力
+$TxtWriteEx("PARAM","CSV","%COMMON_PATH","LOG_PARAM.prm","1","*","=BEGIN=","PARAM1","PARAM2","PARAM3","=END=","N","1")
+
+//# サブマクロを呼び出してログ出力のループ処理(０回or１回)を実行
+$MultiSubExec("%COMMON_PATH","ErrorLogWrite.opb","LOG_PARAM.prm")
+
+//#$TxtWriteEx("%TBL_NAME","CSV","%CSV_PATH","%FILE_NAME","1","*","=BEGIN=","*","=END=","Y","1")
+$Drop("%ERR_TBL_TENPO")
+$Drop("%ERR_TBL_DPT")
+$Drop("%ERR_TBL")
+$Drop("PARAM")
+//# -----------------------------------------------------
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(↓構文移動)
+//#//#PLUで絞り込み
+//#$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""COMP_CD"" = '%HOJIN_CD' AND ""PLU_1_CD"" = '0000000000000'")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","PLUで絞り込み")
+
+//#レジDPT打ち金額
+$AddRealColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CD","REGISTER_DPT_VL","Numeric(13,0)")
+$Calc("WK_TANPIN_MEI","REGISTER_DPT_VL","1","*","+(NVL(@URIAGE_KOMI_VL,0),+(+(NVL(@NEBIKI_VL,0),NVL(@SET_NEBIKI_VL,0)),NVL(@MIX_MATCH_NEBIKI_VL,0)))","1")
+
+//#売上計上日
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%SYSTEM_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#時分秒が"99"の差分ファイルのレコードを取得
+$DuplColumn("WK_TANPIN_MEI","TORIHIKI_TS")
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(%MAIN_TARGET_CUR⇒1)
+$Calc("WK_TANPIN_MEI","TORIHIKI_TS_#1","1","*","$Extract($@TORIHIKI_TS_#1,8,6)","1")
+$MultiSearch("WK_TANPIN_MEI","1","""TORIHIKI_TS_#1"" = '999999'")
+$ParaSet("%SABUN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%SABUN_TARGET_CUR","差分ファイル")
+
+//#差分ファイルは取引日時最小、以外はバッチ日付をセット
+$XSUMNumeric("WK_TANPIN_MEI_SABUN_MIN","WK_TANPIN_MEI","%SABUN_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","TORIHIKI_TS","0","0","1","-1","0","0","0","0","0","0","=END=")
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","WK_TANPIN_MEI_SABUN_MIN","%SABUN_TARGET_CUR","1","=BEGIN=","TENPO_CD","=END=","=BEGIN=","TENPO_CD","=END=","INNER")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","MIN<TORIHIKI_TS>")
+$Drop("WK_TANPIN_MEI_JOIN")
+$Calc("WK_TANPIN_MEI","PARAMETER_TX","1","*","$Extract($@MIN<TORIHIKI_TS>,0,8)","%SABUN_TARGET_CUR")
+$DelColumn("WK_TANPIN_MEI","MIN<TORIHIKI_TS>")
+
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(構文移動)
+//#PLUで絞り込み
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""COMP_CD"" = '%HOJIN_CD' AND ""PLU_1_CD"" = '0000000000000'")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","PLUで絞り込み")
+
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(DPT代表商品の抽出部を削除)
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #（DPT代表商品の抽出を追加）
+
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(DPT代表商品の抽出部を削除したのに伴い、関数内引数変更"WK_TANPIN_MEI_UNION"⇒"WK_TANPIN_MEI"、"1"⇒"%MAIN_TARGET_CUR")
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(値引タイプ0000（通常取引）のみ抽出するカーソルを定義しておく）
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","%MAIN_TARGET_CUR","NEBIKI_TYPE_00","=END=")
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_00""")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_00")
+$ParaSet("%CUR_NORMAL_TORIHIKI","__SID")
+$SetComment("WK_TANPIN_MEI","%CUR_NORMAL_TORIHIKI","通常取引のみ対象")
+
+
+//##########################################################################
+$echo ■対象データを集計
+//##########################################################################
+//#純売上金額（値引レコードも含む）
+$XSUMNumeric("IF_DT_TEN_DPTUCHI_URI_1","WK_TANPIN_MEI","1","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","REGISTER_DPT_VL","0","0","0","-1","1","13","0","0","0","0","=END=")
+$RenameColumn("IF_DT_TEN_DPTUCHI_URI_1","SUM<REGISTER_DPT_VL>","URIAGE_VL")
+
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(関数内引数変更)
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(売上金額は値引項目を加味して計算する）
+//#DPT打ちした対象の売上金額（値引レコードも含む）
+$XSUMNumeric("IF_DT_TEN_DPTUCHI_URI_2","WK_TANPIN_MEI","%CUR_NORMAL_TORIHIKI","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","REGISTER_DPT_VL","0","0","0","-1","1","13","0","0","0","0","COMP_CD","1","0","0","-1","0","0","0","0","0","0","=END=")
+$RenameColumn("IF_DT_TEN_DPTUCHI_URI_2","SUM<REGISTER_DPT_VL>","TAISYO_URIAGE_VL")
+
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(関数内引数変更)
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(追加。件数は通常取引のみ対象としカウントする）
+//#DPT打ちした対象の売上金額（値引レコードは含まない）
+$XSUMNumeric("IF_DT_TEN_DPTUCHI_URI_3","WK_TANPIN_MEI","%CUR_NORMAL_TORIHIKI","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","COMP_CD","1","0","0","-1","0","0","0","0","0","0","=END=")
+$RenameColumn("IF_DT_TEN_DPTUCHI_URI_3","N<COMP_CD>","TAISYO_KENSU_QT")
+
+$CreateJoin("IF_DT_TEN_DPTUCHI_URI_2_JOIN","IF_DT_TEN_DPTUCHI_URI_1","IF_DT_TEN_DPTUCHI_URI_2","1","1","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","OUTER")
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(先に金額項目だけ結合する）
+//#$JoinRealize("IF_DT_TEN_DPTUCHI_URI_2_JOIN","IF_DT_TEN_DPTUCHI_URI","1","N","N","=BEGIN=","IF_DT_TEN_DPTUCHI_URI_2.COMP_CD","IF_DT_TEN_DPTUCHI_URI_2.PARAMETER_TX","IF_DT_TEN_DPTUCHI_URI_2.TENPO_CD","IF_DT_TEN_DPTUCHI_URI_2.BUNRUI1_CD","IF_DT_TEN_DPTUCHI_URI_1.URIAGE_VL","IF_DT_TEN_DPTUCHI_URI_2.TAISYO_URIAGE_VL","IF_DT_TEN_DPTUCHI_URI_2.N<COMP_CD>","=END=")
+$JoinRealize("IF_DT_TEN_DPTUCHI_URI_2_JOIN","IF_DT_TEN_DPTUCHI_URI_JOIN","1","N","N","=BEGIN=","IF_DT_TEN_DPTUCHI_URI_1.COMP_CD","IF_DT_TEN_DPTUCHI_URI_1.PARAMETER_TX","IF_DT_TEN_DPTUCHI_URI_1.TENPO_CD","IF_DT_TEN_DPTUCHI_URI_1.BUNRUI1_CD","IF_DT_TEN_DPTUCHI_URI_1.URIAGE_VL","IF_DT_TEN_DPTUCHI_URI_2.TAISYO_URIAGE_VL","=END=")
+$Drop("IF_DT_TEN_DPTUCHI_URI_2_JOIN")
+$Drop("IF_DT_TEN_DPTUCHI_URI_1")
+$Drop("IF_DT_TEN_DPTUCHI_URI_2")
+
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(追加。件数項目を結合する）
+$CreateJoin("IF_DT_TEN_DPTUCHI_URI_3_JOIN","IF_DT_TEN_DPTUCHI_URI_JOIN","IF_DT_TEN_DPTUCHI_URI_3","1","1","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","=END=","OUTER")
+$JoinRealize("IF_DT_TEN_DPTUCHI_URI_3_JOIN","IF_DT_TEN_DPTUCHI_URI","1","N","N","=BEGIN=","IF_DT_TEN_DPTUCHI_URI_JOIN.COMP_CD","IF_DT_TEN_DPTUCHI_URI_JOIN.PARAMETER_TX","IF_DT_TEN_DPTUCHI_URI_JOIN.TENPO_CD","IF_DT_TEN_DPTUCHI_URI_JOIN.BUNRUI1_CD","IF_DT_TEN_DPTUCHI_URI_JOIN.URIAGE_VL","IF_DT_TEN_DPTUCHI_URI_JOIN.TAISYO_URIAGE_VL","IF_DT_TEN_DPTUCHI_URI_3.TAISYO_KENSU_QT","=END=")
+$Drop("IF_DT_TEN_DPTUCHI_URI_3_JOIN")
+$Drop("IF_DT_TEN_DPTUCHI_URI_3")
+$Drop("IF_DT_TEN_DPTUCHI_URI_JOIN")
+
+//#　　V1.6  2009.09.02  VJC.林     DPT代表商品CDを対象外にするよう修正        #(「通常取引のみのレコードの値引金額と値引取引件数」=NULL ⇒ 0をセット)
+$Calc("IF_DT_TEN_DPTUCHI_URI","TAISYO_URIAGE_VL","1","*","NVL(@TAISYO_URIAGE_VL,0)","1")
+$Calc("IF_DT_TEN_DPTUCHI_URI","TAISYO_KENSU_QT","1","*","NVL(@TAISYO_KENSU_QT,0)","1")
+
+//#CSV出力
+$MultiSort("IF_DT_TEN_DPTUCHI_URI","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","1","=BEGIN=","ASC","ASC","ASC","=END=")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("IF_DT_TEN_DPTUCHI_URI","%MAIN_TARGET_CUR","ソート")
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#　　V1.5  2009.08.13  VJC.福永   DPT代表商品CDも対象+項目により集計条件修正 #(N<COMP_CD>⇒TAISYO_KENSU_QT）
+$TxtWriteEx("IF_DT_TEN_DPTUCHI_URI","CSV","%OUT_PATH","IF_DT_TEN_DPTUCHI_URI.csv","1","*","=BEGIN=","COMP_CD","PARAMETER_TX","TENPO_CD","BUNRUI1_CD","URIAGE_VL","TAISYO_URIAGE_VL","TAISYO_KENSU_QT","=END=","N","%MAIN_TARGET_CUR")
+
+
+//##########################################################################
+$echo ■終了ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061050 DPT打ち売上データ集計処理 処理を終了します","=END=")

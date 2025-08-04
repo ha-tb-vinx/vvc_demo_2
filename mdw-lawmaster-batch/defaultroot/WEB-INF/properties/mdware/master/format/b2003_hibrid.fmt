@@ -1,0 +1,18 @@
+OPTIONS (ERRORS=100000000000,DIRECT=TRUE)
+LOAD DATA		
+INFILE 'F:/posfuldata/datas/share/master/HIBRID.dat'		
+BADFILE 'F:/posfuldata/datas/share/master/HIBRID.bad'
+DISCARDFILE 'F:/posfuldata/datas/share/master/HIBRID.rej'
+TRUNCATE		
+INTO TABLE TMP_HIBRID		
+FIELDS TERMINATED BY X'09'
+(		
+ HINSYU_CD		
+,TENPO_CD		
+,TENHANKU_CD		
+,L_GYOSYU_CD		
+,S_GYOSYU_CD		
+,URIKU_CD		
+,L_HANKU_CD		
+,RENDO_DT		
+)

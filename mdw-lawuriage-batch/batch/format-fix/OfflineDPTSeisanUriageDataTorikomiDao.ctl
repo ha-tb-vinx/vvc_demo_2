@@ -1,0 +1,23 @@
+OPTIONS(LOAD=-1,ROWS=-1,ERRORS=0,DIRECT=y)
+LOAD DATA
+CHARACTERSET UTF8
+TRUNCATE
+INTO TABLE WK_OFF_DPT_SEISAN_URI
+TRAILING NULLCOLS
+(
+	COMP_CD                  	CONSTANT "0000",
+	KEIJO_DT					POSITION(13:20) CHAR,
+	TENPO_CD					POSITION(1:4) CHAR,
+	ENTRY_DT					POSITION(5:12) CHAR,
+	POS_NB						POSITION(21:24) CHAR,
+	JIGYOBU_CD					POSITION(25:26) CHAR,
+	GYOSYU_CD					POSITION(27:28) CHAR,
+	BUNRUI1_CD					POSITION(31:32) CHAR,
+	URIAGE_KOMI_VL				POSITION(33:43) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:URIAGE_KOMI_VL))",
+	URIAGE_QT					POSITION(44:49) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:URIAGE_QT))",
+	NEBIKI_VL					POSITION(50:60) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:NEBIKI_VL))",
+	NEBIKI_QT					POSITION(61:66) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:NEBIKI_QT))",
+	HENPIN_VL					POSITION(67:77) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:HENPIN_VL))",
+	HENPIN_QT					POSITION(78:83) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:HENPIN_QT))",
+	BUNRUI1_KYAKU_QT			POSITION(84:89) "decode(:URIAGE_KOMI_VL,' ',null,'　',null,to_number(:BUNRUI1_KYAKU_QT))"
+)	

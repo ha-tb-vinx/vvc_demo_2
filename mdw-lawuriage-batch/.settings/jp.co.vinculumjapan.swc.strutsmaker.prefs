@@ -1,0 +1,10 @@
+#Tue Sep 16 16:33:05 JST 2008
+actionPackage=test.action
+appRoot=C\:/eclipse/workspace/mdw-sample-batch/WebContent
+eclipse.preferences.version=1
+formPackage=test.form
+jspPath=/WEB-INF/jsp
+srcPath=C\:/eclipse/workspace/mdw-sample-batch/src/test/java
+strutsConfigFilePath=C\:/eclipse/workspace/mdw-sample-batch/WebContent/WEB-INF/struts-config.xml
+strutsMakerConfigPath=C\:/eclipse/workspace/mdw-sample-batch
+validationConfigFilePath=C\:/eclipse/workspace/mdw-sample-batch/WebContent/WEB-INF/properties/validation

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mm-masterbatch  build" default="build_develop" basedir=".">
+
+	<!-- propertyタグで変数を設定 -->
+	<tstamp/>
+	<property name="YYYYMMDD" value="${DSTAMP}"/>
+	<property name="DEST" value="./target"/>
+
+	<!-- コンパイル -->
+	<target name="compile">
+
+		<echo message="Ant Version = ${ant.version}" />
+		<echo message="JRE Version = ${java.specification.version}" />
+
+		<delete dir="${DEST}" failonerror="false" />
+		<mkdir dir="${DEST}/artifact/defaultroot/WEB-INF/classes" />
+
+		<!-- webappコピー -->
+		<copy todir="${DEST}/artifact/defaultroot" encoding="UTF-8">
+			<fileset dir="./defaultroot">
+				<include name="**/*.*" />
+				<exclude name="**/*.class" />
+				<exclude name="**/*.filter" />
+			</fileset>
+		</copy>
+
+		<!-- javaコンパイル -->
+		<javac srcdir="./src" destdir="${DEST}/artifact/defaultroot/WEB-INF/classes" source="1.6" target="1.6" includeantruntime="false" encoding="UTF-8" >
+			<classpath path="C:/apache-tomcat-6.0.35/lib/servlet-api.jar" />
+			<classpath path="C:/apache-tomcat-6.0.35/lib/jsp-api.jar" />
+			<classpath>
+				<fileset dir="./defaultroot/WEB-INF/lib">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+
+	</target>
+
+	<!-- リリース環境別のプロパティのセット -->
+	<target name="setProperty_develop" depends="compile">
+		<property name="SERVER_ENV" value="develop"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<target name="setProperty_develop217" depends="compile">
+		<property name="SERVER_ENV" value="develop217"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<target name="setProperty_develop216" depends="compile">
+		<property name="SERVER_ENV" value="develop216"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<target name="setProperty_internet" depends="compile">
+		<property name="SERVER_ENV" value="production_internet"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<target name="setProperty_honban" depends="compile">
+		<property name="SERVER_ENV" value="honban"/>
+		<property name="ENV_DIR" value="/01-test-mkv/master"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- 本番機用のプロパティのセット -->
+	<target name="setProperty_production_honban" depends="compile">
+		<property name="SERVER_ENV" value="production-honban"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- 開発UAT用のプロパティのセット -->
+	<target name="setProperty_honban_uat" depends="compile">
+		<property name="SERVER_ENV" value="honban-uat"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- 本番UAT用のプロパティのセット -->
+	<target name="setProperty_production_honban_uat" depends="compile">
+		<property name="SERVER_ENV" value="production-honban-uat"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- MKVテスト用のプロパティのセット -->
+	<target name="setProperty_mkv-tkotest" depends="compile">
+		<property name="SERVER_ENV" value="mkv-tkotest"/>
+		<property name="ENV_DIR" value="/01-test-mkv/master"/>
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- MKV本番機用のプロパティのセット -->
+	<target name="setProperty_mkv-honban" depends="compile">
+		<property name="SERVER_ENV" value="mkv-honban"/>
+		<property name="ENV_DIR" value="/10-honban-mkv/master" />
+		<property name="JAR_NAME" value="law-masterbatch.jar" />
+	</target>
+	<!-- MKH本番機用のプロパティのセット -->
+	<target name="setProperty_mkh-honban" depends="compile">
+		<property name="SERVER_ENV" value="mkh-honban"/>
+		<property name="ENV_DIR" value="/10-honban-mkh/master" />
+		<property name="JAR_NAME" value="mkh-masterbatch.jar" />
+	</target>
+	<!-- MKHテスト用のプロパティのセット -->
+	<target name="setProperty_mkh-test" depends="compile">
+		<property name="SERVER_ENV" value="mkh-test"/>
+		<property name="ENV_DIR" value="/02-test-mkh/master" />
+		<property name="JAR_NAME" value="mkh-masterbatch.jar" />
+	</target>
+
+	<!-- ディレクトリの作成 -->
+	<target name="directory">
+		<delete dir="${DEST}${ENV_DIR}/" />
+		<mkdir dir="${DEST}${ENV_DIR}/batch/properties"/>
+		<mkdir dir="${DEST}${ENV_DIR}/batch/batfiles"/>
+		<mkdir dir="${DEST}${ENV_DIR}/lib"/>
+	</target>
+
+	<!-- 更新日時ファイルの作成 -->
+	<target name="jar">
+		<delete file="./defaultroot/createdate.html" />
+
+		<exec executable="cmd.exe">
+			<arg line="/c date /t > ./defaultroot/createdate.html" />
+		</exec>
+
+	</target>
+
+
+	<!-- プロパティファイル、ライブラリ、バッチファイルのコピー -->
+	<target name="propertycopy">
+		<copy todir="${DEST}${ENV_DIR}/batch/properties">
+			<fileset dir="./defaultroot/WEB-INF/properties" excludes="common.properties,properties.resorce,database.properties,stcliblog4j.properties,db/after_sql.properties,mdware_xml/backupConfig.xml,mdware_xml/sendMail.xml,mdware_xml/errorMail.xml"/>
+		</copy>
+		<copy todir="${DEST}${ENV_DIR}/batch/properties" overwrite="true">
+			<fileset dir="./release/${SERVER_ENV}/properties" />
+		</copy>
+		<copy todir="${DEST}${ENV_DIR}/lib">
+			<fileset dir="./defaultroot/WEB-INF/lib"/>
+		</copy>
+		<copy todir="${DEST}${ENV_DIR}/batch/batfiles">
+			<fileset dir="./mdware_batch" />
+			<fileset file="./release/${SERVER_ENV}/mdware_batch/*.bat"/>
+		</copy>
+	</target>
+
+
+	<!-- リリース環境別　build ターゲット -->
+	<!-- 結合環境用 -->
+	<target name="build_develop" depends="setProperty_develop,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(develop) build..." />
+	</target>
+
+	<!-- リリース環境別　build ターゲット -->
+	<!-- 結合環境用 -->
+	<target name="build_develop217" depends="setProperty_develop217,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(develop) build..." />
+	</target>
+	<!-- リリース環境別　build ターゲット216 -->
+	<!-- 結合環境用 -->
+	<target name="build_develop216" depends="setProperty_develop216,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(develop) build..." />
+	</target>
+	<!-- 本番用 -->
+	<target name="build_honban" depends="setProperty_honban,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}${ENV_DIR}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+		<delete dir="${DEST}/artifact" failonerror="false" />
+
+		<echo message="law-masterbatch jar(honban) build..." />
+	</target>
+	<!-- 本番用 -->
+	<target name="build_production_honban" depends="setProperty_production_honban,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(production_honban) build..." />
+	</target>
+	<!-- 開発UAT用 -->
+	<target name="build_honban_uat" depends="setProperty_honban_uat,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(honban-uat) build..." />
+	</target>
+	<!-- 本番UAT用 -->
+	<target name="build_production_honban_uat" depends="setProperty_production_honban_uat,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}/master/${SERVER_ENV}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+
+		<echo message="law-masterbatch jar(production-honban-uat) build..." />
+	</target>
+	<!-- MKVテスト用 -->
+	<target name="build_mkv-tkotest" depends="setProperty_mkv-tkotest,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}${ENV_DIR}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+		<delete dir="${DEST}/artifact" failonerror="false" />
+
+		<echo message="law-masterbatch jar(mkv-tkotest) build..." />
+	</target>
+	<!-- MKV本番用 -->
+	<target name="build_mkv-honban" depends="setProperty_mkv-honban,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}${ENV_DIR}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+		<delete dir="${DEST}/artifact" failonerror="false" />
+
+		<echo message="law-masterbatch jar(mkv-honban) build..." />
+	</target>
+	<!-- MKH本番用 -->
+	<target name="build_mkh-honban" depends="setProperty_mkh-honban,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}${ENV_DIR}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+		<delete dir="${DEST}/artifact" failonerror="false" />
+
+		<echo message="mkh-masterbatch jar(mkh-honban) build..." />
+	</target>
+
+	<!-- MKHテスト用 -->
+	<target name="build_mkh-test" depends="setProperty_mkh-test,directory,propertycopy,jar">
+		<jar basedir="${DEST}/artifact/defaultroot/WEB-INF/classes/"
+			destfile="${DEST}${ENV_DIR}/${JAR_NAME}"
+			manifest="./release/${SERVER_ENV}/META-INF/MANIFEST.MF">
+		</jar>
+		<delete dir="${DEST}/artifact" failonerror="false" />
+
+		<echo message="mkh-masterbatch jar(mkh-test) build..." />
+	</target>
+
+</project>

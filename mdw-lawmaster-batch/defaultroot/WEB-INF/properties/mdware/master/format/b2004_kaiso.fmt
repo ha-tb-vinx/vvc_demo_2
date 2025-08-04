@@ -1,0 +1,15 @@
+OPTIONS (ERRORS=100000000000,DIRECT=TRUE)
+LOAD DATA		
+INFILE 'F:/posfuldata/datas/share/master/kaiso.dat'		
+BADFILE 'F:/posfuldata/datas/share/master/kaiso.bad'
+DISCARDFILE 'F:/posfuldata/datas/share/master/kaiso.rej'
+TRUNCATE		
+INTO TABLE TMP_KAISO		
+FIELDS TERMINATED BY X'09'
+(
+  KAISO_KB,
+  KAISO_CD,
+  KAISO_NA,
+  KAISO_KA,
+  RENDO_DT
+)

@@ -1,0 +1,3 @@
+# ResorceUtilクラスで使用します。
+# FilePropertiesクラスの仕様で Key == Value と=が２つ必要なので注意。 
+SUBSYSTEM_ID==MASTER

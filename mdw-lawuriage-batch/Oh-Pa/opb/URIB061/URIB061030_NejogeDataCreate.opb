@@ -1,0 +1,1339 @@
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　値上下データ作成処理                                  #
+//#　ジョブＩＤ　　　：　URIB061030                                            #
+//#　プログラムＩＤ　：　NejogeDataCreate                                      #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.05.07                                            #
+//#                                                                            #
+//#　処理概要　：　値上下データ作成処理                                        #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　Commonファイルパス                                              #
+//#　　%2　―　マクロファイルパス                                              #
+//#　　%3　―　D5Tファイルパス                                                 #
+//#　　%4　―　CSVファイルパス                                                 #
+//#　　%5　―　カタログファイルパス                                            #
+//#　　%6　―　法人コードパス                                                  #
+//#　コメント　：　(前提条件)                                                  #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.05.07  松本       新規作成                                   #
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#　　V1.2  2009.07.03  VJC.福永   R_TENPO.DELETE項目削除対応                 #
+//#　　V1.3  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+//#　　V1.4  2009.07.10  VJC.福永   会計用店DPTマスタの空白対応                #
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #
+//#　　V1.6  2009.07.16  VJC.福永   クラスのカラム値設定間違い修正             #
+//#　　V1.7  2009.08.24  VJC.福永   値上時の売価差額計算考慮漏れ修正           #
+//#　　V1.8  2009.08.31  安田       累積された販売マスタを参照するよう修正     #
+//#　　V1.9  2009.09.12  VJC.福永   数量・金額の符号仕様の修正                 #
+//#　　V1.10 2009.09.16  片山       名称を商品マスタから取得するように修正     #
+//#　　V1.11 2009.09.17  片山       先頭02商品コードの読替え処理を追加         #
+//#　　V1.12 2009.09.19  片山       V1.11の条件に先頭23商品コードを追加        #
+//#　　V1.13 2009.09.24  片山       見切実績ﾜｰｸﾃｰﾌﾞﾙの作成処理を追加           #
+//#　　V1.14 2009.10.04  VJC.福永   POS売変以外はﾏｽﾀ条件をかけない修正         #
+//#　　V1.14 2010.07.17  VJC.林     頭02,23の商品コードをエラー扱いにしない対応#
+//#　　                             V1.11,V1.12の頭02,23の取り方をマスタに     #
+//#　　                             持たせる対応(ベタ打ち解除)                 #
+//#　　V1.16 2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #
+//#　　V1.17 2010.09.29  VJC.井関   店DPTマスタ参照方法変更バグ対応            #
+//##############################################################################
+
+
+//##########################################################################
+$echo ■クリア
+//##########################################################################
+$ClearWS()
+$ParaAllClear()
+
+//##########################################################################
+$echo ■パラメーターセット
+//##########################################################################
+//#Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+//#マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+//#D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+//#CSVパス
+$ParaSet("%CSV_PATH",%4)
+//#カタログパス
+$ParaSet("%CTLG_PATH",%5)
+//#法人コード
+$ParaSet("%HOJIN_CD",%6)
+//#ファンクションID
+$ParaSet("%FUNC_ID","URIB_061030")
+//#　　V1.14 2010.07.17  VJC.林 Start #
+//#サブシステムID
+$ParaSet("%SUBSYSTEM_ID","URIAGE")
+//#　　V1.14 2010.07.17  VJC.林 End   #
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+//#出力パス
+$ParaSet("%OUT_PATH",%7)
+
+
+//##########################################################################
+$echo ■開始ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061030 値上下データ作成処理 処理を開始します","=END=")
+
+
+//##########################################################################
+$echo ■テーブルファイルをロード
+//##########################################################################
+$Load("%D5T_PATH","SYSTEM_CONTROL")
+$Load("%D5T_PATH","DICTIONARY_CONTROL")
+$Load("%D5T_PATH","R_TENPO")
+$Load("%D5T_PATH","R_FI_TENPO_BUNRUI1")
+//#　　V1.4  2009.07.10  VJC.福永   会計用店DPTマスタの空白対応                #
+$Calc("R_FI_TENPO_BUNRUI1","TENPO_CD","1","*","$RTrim($@TENPO_CD)","1")
+$Calc("R_FI_TENPO_BUNRUI1","BUNRUI1_CD","1","*","$RTrim($@BUNRUI1_CD)","1")
+$Load("%D5T_PATH","R_FI_HANBAI")
+$Load("%D5T_PATH","WK_TANPIN_MEI")
+//#　　V1.10  2009.09.16  片山   #
+$Load("%D5T_PATH","R_SYOHIN")
+
+//##########################################################################
+$echo ■ 直近有効日の店DPTマスタを抽出
+//##########################################################################
+//#　　V1.16 2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #START 直近有効日の店DPTマスタを抽出
+//#処理会計月を取得
+$SubExec("%COMMON_PATH","GetKaikeiYM.opb","=BEGIN=","%HOJIN_CD","%D5T_PATH","=END=")
+$RenameColumn("R_CALENDAR","START_DT","KANRI_DT")
+$Rename("DT_KANRI_DT","R_CALENDAR")
+//# 終了日を転送
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_FI_TENPO_BUNRUI1","DT_KANRI_DT","1","1","END_DT","=END=")
+//# バッチ日付を転送
+$SubExec("%COMMON_PATH","AppendSystemControl.opb","=BEGIN=","R_FI_TENPO_BUNRUI1","1","URIAGE","BATCH_DT","=END=")
+//#会計月終了日とバッチ日付を比較し、若い日付を採用
+$AddRealColumn("R_FI_TENPO_BUNRUI1","[RecNo]","TARGET_DT","String")
+$Calc("R_FI_TENPO_BUNRUI1","TARGET_DT","1","*","$IF(>=(StrToInt($@BATCH_DT),StrToInt($@END_DT)),$@END_DT,$@BATCH_DT)","1")
+//# 法人コード、有効日、削除フラグで絞り込む
+$MultiSearch("R_FI_TENPO_BUNRUI1","1","""COMP_CD"" = '%HOJIN_CD' AND ""YUKO_DT"" <= ""TARGET_DT""")
+$ParaSet("%R_FI_TENPO_BUNRUI1_YUKO_CUR","__SID")
+$Sort("R_FI_TENPO_BUNRUI1","YUKO_DT","%R_FI_TENPO_BUNRUI1_YUKO_CUR","DSC")
+$ParaSet("%R_FI_TENPO_BUNRUI1_SORT_CUR","__SID")
+//# 一番新しい有効日のレコードを抽出
+$ExUnique("R_FI_TENPO_BUNRUI1","%R_FI_TENPO_BUNRUI1_SORT_CUR","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","N")
+$ParaSet("%R_FI_TENPO_BUNRUI1_UNIQUE_CUR","__SID")
+//# 一番新しい有効日のレコード以外を抽出し、削除
+$SetSUB("R_FI_TENPO_BUNRUI1","1","%R_FI_TENPO_BUNRUI1_UNIQUE_CUR")
+$ParaSet("%R_FI_TENPO_BUNRUI1_DLT_CUR","__SID")
+$DeleteRow("R_FI_TENPO_BUNRUI1","1","*","%R_FI_TENPO_BUNRUI1_DLT_CUR")
+//# Cursorを1のみとする。
+$DelAllCursors("R_FI_TENPO_BUNRUI1")
+//#　　V1.16 2010.09.14  VJC.井関   店DPTマスタ参照方法変更                    #E N D 直近有効日の店DPTマスタを抽出
+
+//##########################################################################
+$echo ■定数を取得
+//##########################################################################
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","R_TENPO","1","TENPO_KB_EIGYO","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","R_TENPO","1","DELETE_FG_NORMAL","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","DELETE_FG_NORMAL","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_KB_NEAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_KB_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_POS_NEAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_POS_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_SONOTA","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_TENPO_EN_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_GRP_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_TENPO_PER_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_TENPO_OTSUTOME_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_MM_REG_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_MM_HONBU_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_CM_EN_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_CM_PER_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","RIYU_D_KB_CM_TORI_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","DENPYO_KB_NEJOGE_HAIKI","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","TANAOROSHI_GENKA_KB_BAIKA","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","SHIIRE_HANBAI_KB_SHIIREHANBAI","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","TEIKAN_KB_FUTEIKAN","=END=")
+
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_00","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_01","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_02","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_03","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_04","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_05","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_MM_01","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_MM_02","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_MM_03","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_CM_01","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_CM_02","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_CM_03","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_CM_04","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","NEBIKI_TYPE_COUPONS","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","BAIHEN_TYPE_GAKU","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","BAIHEN_TYPE_PER","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","ZEI_KB_IN","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_TANPIN_MEI","1","ZEI_KB_OUT","=END=")
+
+
+//##########################################################################
+$echo ■システムコントロールマスタよりパラメータを取得
+//##########################################################################
+//#バッチ日付を取得
+//#　　V1.3  2009.07.10  VJC.福永   BATCH_DATE⇒BATCH_DTに修正                 #
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'URIAGE' AND ""PARAMETER_ID"" = 'BATCH_DT'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","バッチ日付")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_TENPO","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","R_FI_HANBAI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#コントロールマスタから対象外DPのレコードを取得
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(""SUBSYSTEM_ID"" = 'URIAGE'⇒'COMMON')
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'NEJOGE_TAISYOGAI_DPT'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","対象外DPT")
+
+//#システムディクショナリマスタから対象外DPTコードを取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","NEJOGE_TAISYOGAI_DPT","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//#コントロールマスタから対象外クラスを取得
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(""SUBSYSTEM_ID"" = 'URIAGE'⇒'COMMON')
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'NEJOGE_TAISYOGAI_CLASS'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","対象外クラス")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#システムディクショナリマスタから対象外クラスコードを取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","NEJOGE_TAISYOGAI_CLASS","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(対象外ラインは設定しない)
+//#コントロールマスタから対象外ラインを取得
+
+//#システムディクショナリマスタから対象外ラインコードを取得
+
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(DPT代表ライン/クラス、DPTその他ライン/クラスを対象外に追加)
+//#コントロールマスタから対象外ライン(DPT代表ライン)を取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'DPT_DAIHYO_LINE_CD'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","DPT代表ライン")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#システムディクショナリマスタから対象外ライン(DPT代表ライン)を取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","DPT_DAIHYO_LINE_CD","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//#コントロールマスタから対象クラス(DPT代表クラス)を取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'DPT_DAIHYO_CLASS_CD'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","DPT代表クラス")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#システムディクショナリマスタから対象外クラス(DPT代表クラス)を取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","DPT_DAIHYO_CLASS_CD","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//#コントロールマスタから対象外ライン(DPTその他ライン)を取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'DPT_SONOTA_LINE_CD'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","DPTその他ライン")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#システムディクショナリマスタから対象外ライン(DPTその他ライン)を取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","DPT_SONOTA_LINE_CD","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//#コントロールマスタから対象外クラス(DPTその他クラス)を取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'COMMON' AND ""PARAMETER_ID"" = 'DPT_SONOTA_CLASS_CD'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("SYSTEM_CONTROL","%TMP_TARGET_CUR","DPTその他クラス")
+$SubExec("%COMMON_PATH","ColumnTransferEx.opb","=BEGIN=","WK_TANPIN_MEI","SYSTEM_CONTROL","1","%TMP_TARGET_CUR","PARAMETER_TX","=END=")
+
+//#システムディクショナリマスタから対象外クラス(DPTその他クラス)を取得
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","DICTIONARY_CONTROL","%TMP_TARGET_CUR","1","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","=BEGIN=","SUBSYSTEM_ID","PARAMETER_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","DPT_SONOTA_CLASS_CD","1","N","N","=BEGIN=","DICTIONARY_CONTROL.PARAMETER_TX","=END=")
+$Drop("SYSTEM_CONTROL_JOIN")
+
+//##########################################################################
+$echo ■新単品明細ログワークのデータを抽出
+//##########################################################################
+//#店舗マスタの有効行を取得
+//#$MultiSearch("R_TENPO","1","""HOJIN_CD"" = '%HOJIN_CD' AND ""KAITEN_DT"" <= ""PARAMETER_TX"" AND ""HEITEN_DT"" >= ""PARAMETER_TX"" AND ""TENPO_KB"" = ""TENPO_KB_EIGYO"" AND ""DELETE_FG"" = ""DELETE_FG_NORMAL""")
+//#　　V1.2  2009.07.03  VJC.福永   R_TENPO.DELETE項目削除対応                 #
+$MultiSearch("R_TENPO","1","""HOJIN_CD"" = '%HOJIN_CD' AND ""KAITEN_DT"" <= ""PARAMETER_TX"" AND (""HEITEN_DT"" = '' OR (""HEITEN_DT"" <> '' AND ""HEITEN_DT"" >= ""PARAMETER_TX"")) AND ""TENPO_KB"" = ""TENPO_KB_EIGYO""")
+
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("R_TENPO","%TMP_TARGET_CUR","有効レコード")
+
+//#店舗マスタと結合
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_TENPO","1","%TMP_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","HOJIN_CD","TENPO_CD","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","店舗マスタと結合")
+
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_TENPO","__SID")
+$ExtCursor("WK_TANPIN_MEI_TENPO","WK_TANPIN_MEI","%ERR_TBL_TENPO","N","=BEGIN=","COMP_CD","TENPO_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TENPO_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_TENPO","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TENPO_CD","BUNRUI1_CD","String")
+$AddRealColumn("WK_TANPIN_MEI_TENPO","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_TENPO","MESSAGE","1","*","店舗コードが店舗マスタに存在しません","1")
+
+$ParaSet("%ERR_TBL_TENPO","WK_TANPIN_MEI_TENPO")
+
+//# -----------------------------------------------------
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+
+//#店DPT別マスタと結合
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_TENPO_BUNRUI1","%MAIN_TARGET_CUR","1","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","店DPTマスタと結合")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TANAOROSHI_GENKA_KB")
+
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_DPT","__SID")
+$ExtCursor("WK_TANPIN_MEI_DPT","WK_TANPIN_MEI","%ERR_TBL_DPT","N","=BEGIN=","COMP_CD","TENPO_CD","BUNRUI1_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_DPT","BUNRUI1_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_DPT","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_DPT","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_DPT","MESSAGE","1","*","DPTコードが会計用店DPTマスタに存在しません","1")
+
+$ParaSet("%ERR_TBL_DPT","WK_TANPIN_MEI_DPT")
+
+//# -----------------------------------------------------
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+//#　　V1.8  2009.08.31  安田       累積された販売マスタを参照するよう修正
+//#販売マスタの有効レコードを取得
+//# $MultiSearch("R_FI_HANBAI","1","""COMP_CD"" = '%HOJIN_CD' AND ""TEKIYO_START_DT"" <= ""PARAMETER_TX""")
+//# $XSUMNumeric("R_FI_HANBAI","R_FI_HANBAI","2","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","=END=","=BEGIN=","TEKIYO_START_DT","0","1","0","-1","0","0","0","0","0","0","=END=")
+//# $CreateJoin("R_FI_HANBAI_JOIN","R_FI_HANBAI","R_FI_HANBAI_#1","1","1","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","TEKIYO_START_DT","=END=","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","MAX<TEKIYO_START_DT>","=END=","INNER")
+//# $JoinRealize("R_FI_HANBAI_JOIN","R_FI_HANBAI_JOIN_REAL","1","N","N","=BEGIN=","*","=END=")
+//# $Drop("R_FI_HANBAI_JOIN")
+//# $Drop("R_FI_HANBAI_#1")
+//# $Drop("R_FI_HANBAI")
+//# $Rename("R_FI_HANBAI","R_FI_HANBAI_JOIN_REAL")
+
+
+//# 先に必要な項目を作成
+
+//#伝票種別
+$AddRealColumn("WK_TANPIN_MEI","COMP_CD","DENPYO_KB","String")
+
+//#管理日付
+$AddRealColumn("WK_TANPIN_MEI","DENPYO_KB","KANRI_DT","String")
+
+//#固定値をセット
+$Calc("WK_TANPIN_MEI","DENPYO_KB","1","*","$@DENPYO_KB_NEJOGE_HAIKI","%MAIN_TARGET_CUR")
+
+//#管理日付
+$Calc("WK_TANPIN_MEI","KANRI_DT","1","*","$@PARAMETER_TX","%MAIN_TARGET_CUR")
+
+//# 日付調整を先に行う
+
+//#時分秒が"99"の差分ファイルのレコードを取得
+$DuplColumn("WK_TANPIN_MEI","TORIHIKI_TS")
+$Calc("WK_TANPIN_MEI","TORIHIKI_TS_#1","1","*","$Extract($@TORIHIKI_TS_#1,8,6)","%MAIN_TARGET_CUR")
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""TORIHIKI_TS_#1"" = '999999'")
+$ParaSet("%SABUN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%SABUN_TARGET_CUR","差分ファイル")
+
+//#差分ファイルは取引日時最小、以外はバッチ日付をセット
+$XSUMNumeric("WK_TANPIN_MEI_SABUN_MIN","WK_TANPIN_MEI","%SABUN_TARGET_CUR","=BEGIN=","COMP_CD","TENPO_CD","=END=","=BEGIN=","TORIHIKI_TS","0","0","1","-1","0","0","0","0","0","0","=END=")
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","WK_TANPIN_MEI_SABUN_MIN","%SABUN_TARGET_CUR","1","=BEGIN=","TENPO_CD","=END=","=BEGIN=","TENPO_CD","=END=","INNER")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","MIN<TORIHIKI_TS>")
+$Drop("WK_TANPIN_MEI_JOIN")
+$Calc("WK_TANPIN_MEI","KANRI_DT","1","*","$Extract($@MIN<TORIHIKI_TS>,0,8)","%SABUN_TARGET_CUR")
+$DelColumn("WK_TANPIN_MEI","MIN<TORIHIKI_TS>")
+
+//#　　V1.11  2009.09.16  片山 Str  #
+
+//# -----------------------------------------------------
+//#販売マスタ結合の前準備
+//# -----------------------------------------------------
+//# 先頭02、23商品コードの検索用カラムを追加
+//# 販売マスタ
+$AddRealColumn("R_FI_HANBAI","SYOHIN_CD","SYOHIN_CD_EDIT","String")
+$Calc("R_FI_HANBAI","SYOHIN_CD_EDIT","1","*","$Extract($@SYOHIN_CD,0,7)","1")
+//# 単品明細ワーク
+$AddRealColumn("WK_TANPIN_MEI","PLU_1_CD","SYOHIN_CD_EDIT","String")
+$Calc("WK_TANPIN_MEI","SYOHIN_CD_EDIT","1","*","$Extract($@PLU_1_CD,0,7)","1")
+
+//#　　V1.14 2010.07.17  VJC.林 Start #
+//# 単品明細ワークの抽出
+//# 先頭02、23商品コードの抽出
+//#　　V1.12  2009.09.19  片山 Str  #
+//#$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""PLU_1_CD"" LEFT MATCH '02'")
+//#$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""PLU_1_CD"" LEFT MATCH '02' OR ""PLU_1_CD"" LEFT MATCH '23'")
+//# PLU_1_CDの頭2桁を取得
+$AddRealColumn("WK_TANPIN_MEI","PLU_1_CD","PLU_1_CD_HEAD","String")
+$Calc("WK_TANPIN_MEI","PLU_1_CD_HEAD","1","*","$Extract($@PLU_1_CD,0,2)","1")
+//# ディクショナリコントロールマスタより対象外DPTを抽出
+$MultiSearch("DICTIONARY_CONTROL","1","""SUBSYSTEM_ID"" = '%SUBSYSTEM_ID' AND ""PARAMETER_ID"" = 'NOT_ERR_LOG_OUTPUT_HEAD'")
+$ParaSet("%NOT_ERR_LOG_OUTPUT_HEAD_CUR","__SID")
+//# 対象外DPTを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DICTIONARY_CONTROL","1","%NOT_ERR_LOG_OUTPUT_HEAD_CUR","=BEGIN=","PLU_1_CD_HEAD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+//#　　V1.12  2009.09.19  片山 End  #
+$ParaSet("%HANBAI_FR_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%HANBAI_FR_TARGET_CUR","先頭02、23商品コード")
+
+//# 先頭02、23以外商品コードの抽出
+//#$SetNOT("WK_TANPIN_MEI","%HANBAI_FR_TARGET_CUR")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%HANBAI_ALL_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%HANBAI_ALL_TARGET_CUR","先頭02、23以外商品コード")
+
+$Drop("WK_TANPIN_MEI_JOIN")
+$DelColumn("WK_TANPIN_MEI","PLU_1_CD_HEAD")
+//#　　V1.14 2010.07.17  VJC.林 End   #
+//# -----------------------------------------------------
+//#販売マスタと結合
+//# -----------------------------------------------------
+//# ①02で始まる商品コードデータの抽出
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_HANBAI","%HANBAI_FR_TARGET_CUR","1","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD_EDIT","KANRI_DT","=END=","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD_EDIT","TEKIYO_START_DT","=END=","INNER")
+
+//# 項目転送
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI1_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI2_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI5_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","SHIIRE_HANBAI_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TEIKAN_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZAIKO_SYOHIN_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","MAKER_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAITANKA_DAY_VL")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RT")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZEI_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RATE_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAIHEN_TYPE")
+//# 商品コードの書替えを行う
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","SYOHIN_CD")
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%HANBAI_FR_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%HANBAI_FR_TARGET_CUR","販売マスタと結合(02,23)")
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_HANBAI_FR","__SID")
+$ExtCursor("WK_TANPIN_MEI_HANBAI_FR","WK_TANPIN_MEI","%ERR_TBL_HANBAI_FR","N","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_HANBAI_FR","PLU_1_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_HANBAI_FR","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_HANBAI_FR","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_HANBAI_FR","MESSAGE","1","*","商品コードが販売マスタに存在しません","1")
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+//# ②02以外で始まる商品コードデータの抽出
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_HANBAI","%HANBAI_ALL_TARGET_CUR","1","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","KANRI_DT","=END=","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","TEKIYO_START_DT","=END=","INNER")
+
+//# 項目転送
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI1_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI2_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI5_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","SHIIRE_HANBAI_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TEIKAN_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZAIKO_SYOHIN_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","MAKER_CD")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAITANKA_DAY_VL")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RT")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZEI_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RATE_KB")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAIHEN_TYPE")
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%HANBAI_ALL_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%HANBAI_ALL_TARGET_CUR","販売マスタと結合(02,23以外)")
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_HANBAI_ALL","__SID")
+$ExtCursor("WK_TANPIN_MEI_HANBAI_ALL","WK_TANPIN_MEI","%ERR_TBL_HANBAI_ALL","N","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_HANBAI_ALL","PLU_1_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_HANBAI_ALL","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_HANBAI_ALL","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_HANBAI_ALL","MESSAGE","1","*","商品コードが販売マスタに存在しません","1")
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+//# 抽出したデータのUNION
+$SetOR("WK_TANPIN_MEI","%HANBAI_ALL_TARGET_CUR","%HANBAI_FR_TARGET_CUR")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","販売マスタと結合")
+
+
+//# 商品コードの書換え
+$Calc("WK_TANPIN_MEI","PLU_1_CD","1","*","$IF(EQ($@SYOHIN_CD,$""""),$@PLU_1_CD,$@SYOHIN_CD)","%MAIN_TARGET_CUR")
+
+//# 項目コピー
+$Calc("WK_TANPIN_MEI","BUNRUI1_CD_#1","1","*","$IF(EQ($@BUNRUI1_CD_#1,$""""),$@BUNRUI1_CD_#2,$@BUNRUI1_CD_#1)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BUNRUI2_CD","1","*","$IF(EQ($@BUNRUI2_CD,$""""),$@BUNRUI2_CD_#1,$@BUNRUI2_CD)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BUNRUI5_CD_#1","1","*","$IF(EQ($@BUNRUI5_CD_#1,$""""),$@BUNRUI5_CD_#2,$@BUNRUI5_CD_#1)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_HANBAI_KB","1","*","$IF(EQ($@SHIIRE_HANBAI_KB,$""""),$@SHIIRE_HANBAI_KB_#1,$@SHIIRE_HANBAI_KB)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","TEIKAN_KB","1","*","$IF(EQ($@TEIKAN_KB,$""""),$@TEIKAN_KB_#1,$@TEIKAN_KB)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","ZAIKO_SYOHIN_CD","1","*","$IF(EQ($@ZAIKO_SYOHIN_CD,$""""),$@ZAIKO_SYOHIN_CD_#1,$@ZAIKO_SYOHIN_CD)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","MAKER_CD","1","*","$IF(EQ($@MAKER_CD,$""""),$@MAKER_CD_#1,$@MAKER_CD)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_DAY_VL","1","*","NVL(@BAITANKA_DAY_VL,@BAITANKA_DAY_VL_#1)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","TAX_RT","1","*","NVL(@TAX_RT,@TAX_RT_#1)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","ZEI_KB","1","*","$IF(EQ($@ZEI_KB,$""""),$@ZEI_KB_#1,$@ZEI_KB)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","TAX_RATE_KB","1","*","$IF(EQ($@TAX_RATE_KB,$""""),$@TAX_RATE_KB_#1,$@TAX_RATE_KB)","%MAIN_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAIHEN_TYPE","1","*","$IF(EQ($@BAIHEN_TYPE,$""""),$@BAIHEN_TYPE_#1,$@BAIHEN_TYPE)","%MAIN_TARGET_CUR")
+
+//# 不要列の削除
+$DelColumn("WK_TANPIN_MEI","SYOHIN_CD_EDIT")
+$DelColumn("WK_TANPIN_MEI","SYOHIN_CD")
+
+$DelColumn("WK_TANPIN_MEI","BUNRUI1_CD_#2")
+$DelColumn("WK_TANPIN_MEI","BUNRUI2_CD_#1")
+$DelColumn("WK_TANPIN_MEI","BUNRUI5_CD_#2")
+$DelColumn("WK_TANPIN_MEI","SHIIRE_HANBAI_KB_#1")
+$DelColumn("WK_TANPIN_MEI","TEIKAN_KB_#1")
+$DelColumn("WK_TANPIN_MEI","ZAIKO_SYOHIN_CD_#1")
+$DelColumn("WK_TANPIN_MEI","MAKER_CD_#1")
+$DelColumn("WK_TANPIN_MEI","BAITANKA_DAY_VL_#1")
+$DelColumn("WK_TANPIN_MEI","TAX_RT_#1")
+$DelColumn("WK_TANPIN_MEI","ZEI_KB_#1")
+$DelColumn("WK_TANPIN_MEI","TAX_RATE_KB_#1")
+$DelColumn("WK_TANPIN_MEI","BAIHEN_TYPE_#1")
+
+//#販売マスタと結合
+//# 結合条件を法人コード、店舗コード、商品コード、プラス、日付にする
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_HANBAI","%MAIN_TARGET_CUR","1","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","KANRI_DT","=END=","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","TEKIYO_START_DT","=END=","INNER")
+//# $CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_FI_HANBAI","%MAIN_TARGET_CUR","1","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","=END=","=BEGIN=","COMP_CD","TENPO_CD","SYOHIN_CD","=END=","INNER")
+
+//#$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","販売マスタと結合")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI1_CD")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI2_CD")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","BUNRUI5_CD")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","SHIIRE_HANBAI_KB")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","TEIKAN_KB")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZAIKO_SYOHIN_CD")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","MAKER_CD")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAITANKA_DAY_VL")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RT")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","ZEI_KB")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","TAX_RATE_KB")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","BAIHEN_TYPE")
+//#　　V1.11  2009.09.16  片山 End  #
+
+//#　　V1.10  2009.09.16  片山 Str  #
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","HINMEI_KANJI_NA")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANJI_NA")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANJI_2_NA")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","HINMEI_KANA_NA")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANA_NA")
+//#$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANA_2_NA")
+//#　　V1.10  2009.09.16  片山 End  #
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+//#$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+//#$ParaSet("%ERR_TBL_HANBAI","__SID")
+//#$ExtCursor("WK_TANPIN_MEI_HANBAI","WK_TANPIN_MEI","%ERR_TBL_HANBAI","N","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","=END=")
+//#$AddRealColumn("WK_TANPIN_MEI_HANBAI","PLU_1_CD","TABLE","String")
+//#$Fill("WK_TANPIN_MEI_HANBAI","TABLE","1","*","WK_TANPIN_MEI","1")
+//#$AddRealColumn("WK_TANPIN_MEI_HANBAI","TABLE","MESSAGE","String")
+//#$Fill("WK_TANPIN_MEI_HANBAI","MESSAGE","1","*","商品コードが販売マスタに存在しません","1")
+
+//#　　V1.10  2009.09.16  片山 Str  商品マスタの取得処理を追加 #
+
+//#商品マスタと結合
+//#結合条件：商品コード、分類1コード
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","R_SYOHIN","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI1_CD","PLU_1_CD","=END=","=BEGIN=","BUNRUI1_CD","SYOHIN_CD","=END=","INNER")
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","N")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","商品マスタと結合")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","HINMEI_KANJI_NA")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANJI_NA")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANJI_2_NA")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","HINMEI_KANA_NA")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANA_NA")
+$ColumnTransfer("WK_TANPIN_MEI_JOIN","KIKAKU_KANA_2_NA")
+
+//# -----------------------------------------------------
+//# アンマッチデータログ出力
+//# 最大値を取って０回～１回のサブマクロ処理を行う
+//# レコード０件のときはループ回数０(ログ出力しない)
+
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$ParaSet("%ERR_TBL_SYOHIN","__SID")
+$ExtCursor("WK_TANPIN_MEI_SYOHIN","WK_TANPIN_MEI","%ERR_TBL_SYOHIN","N","=BEGIN=","COMP_CD","TENPO_CD","PLU_1_CD","=END=")
+$AddRealColumn("WK_TANPIN_MEI_SYOHIN","PLU_1_CD","TABLE","String")
+$Fill("WK_TANPIN_MEI_SYOHIN","TABLE","1","*","WK_TANPIN_MEI","1")
+$AddRealColumn("WK_TANPIN_MEI_SYOHIN","TABLE","MESSAGE","String")
+$Fill("WK_TANPIN_MEI_SYOHIN","MESSAGE","1","*","商品コードが商品マスタに存在しません","1")
+//# -----------------------------------------------------
+//#　　V1.10  2009.09.16  片山 End  #
+
+//#店舗マスタ、店DPTマスタのアンマッチと結合
+$Union("WK_TANPIN_MEI_UNION","WK_TANPIN_MEI_TENPO","WK_TANPIN_MEI_DPT","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+//#　　V1.11  2009.09.17  片山 Str #
+$Union("WK_TANPIN_MEI_HANBAI","WK_TANPIN_MEI_HANBAI_FR","WK_TANPIN_MEI_HANBAI_ALL","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+//#　　V1.11  2009.09.17  片山 End #
+$Union("WK_TANPIN_MEI_REAL","WK_TANPIN_MEI_UNION","WK_TANPIN_MEI_HANBAI","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+//#　　V1.10  2009.09.16  片山 Str 商品マスタのチェックを追加 #
+$Union("WK_TANPIN_MEI_REAL_SYOHIN","WK_TANPIN_MEI_REAL","WK_TANPIN_MEI_SYOHIN","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+$Drop("WK_TANPIN_MEI_REAL")
+$Rename("WK_TANPIN_MEI_REAL","WK_TANPIN_MEI_REAL_SYOHIN")
+//#　　V1.10  2009.09.16  片山 End  #
+
+//#　　V1.14 2010.07.17  VJC.林 Start #
+//# BUNRUI1_CDの頭2桁を取得
+$AddRealColumn("WK_TANPIN_MEI_REAL","BUNRUI1_CD","BUNRUI1_HEAD","String")
+$Calc("WK_TANPIN_MEI_REAL","BUNRUI1_HEAD","1","*","$Extract($@BUNRUI1_CD,0,2)","1")
+//# エラーログ出力データより対象外DPTを除外
+$CreateJoin("WK_TANPIN_MEI_REAL_JOIN","WK_TANPIN_MEI_REAL","DICTIONARY_CONTROL","1","%NOT_ERR_LOG_OUTPUT_HEAD_CUR","=BEGIN=","BUNRUI1_HEAD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_REAL_JOIN","N","N")
+$ParaSet("%NOT_ERR_LOG_OUTPUT_CUR","__SID")
+$Drop("WK_TANPIN_MEI_REAL_JOIN")
+$Drop("DICTIONARY_CONTROL")
+$DeleteRow("WK_TANPIN_MEI_REAL","1","*","%NOT_ERR_LOG_OUTPUT_CUR")
+$DelColumn("WK_TANPIN_MEI_REAL","BUNRUI1_HEAD")
+//#　　V1.14 2010.07.17  VJC.林 End   #
+
+$ParaSet("%ERR_TBL_HANBAI","WK_TANPIN_MEI_HANBAI")
+$ParaSet("%ERR_TBL_UNION","WK_TANPIN_MEI_UNION")
+$ParaSet("%ERR_TBL","WK_TANPIN_MEI_REAL")
+
+//# レコード有り無しを判定するために法人コードの最大値を取る(０件なら取得レコード無し)
+$XSUMNumeric("PARAM","%ERR_TBL","1","=BEGIN=","=END=","=BEGIN=","COMP_CD","0","1","0","-1","0","0","0","0","0","0","=END=")
+//# テーブル名
+$AddRealColumn("PARAM","[RecNo]","PARAM1","String")
+$Fill("PARAM","PARAM1","1","*","%ERR_TBL","1")
+//# 保存ファイル名
+$AddRealColumn("PARAM","PARAM1","PARAM2","String")
+$Calc("PARAM","PARAM2","1","*","$&($&($&($""%FUNC_ID"",$""ErrLog_""),$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))),$"".csv"")","1")
+
+//# LOGパス
+$AddRealColumn("PARAM","PARAM2","PARAM3","String")
+$Fill("PARAM","PARAM3","1","*","%CSV_PATH","1")
+//#パラメータ用CSV出力
+$TxtWriteEx("PARAM","CSV","%COMMON_PATH","LOG_PARAM.prm","1","*","=BEGIN=","PARAM1","PARAM2","PARAM3","=END=","N","1")
+
+//# サブマクロを呼び出してログ出力のループ処理(０回or１回)を実行
+$MultiSubExec("%COMMON_PATH","ErrorLogWrite.opb","LOG_PARAM.prm")
+
+//#$TxtWriteEx("%TBL_NAME","CSV","%CSV_PATH","%FILE_NAME","1","*","=BEGIN=","*","=END=","Y","1")
+
+
+$Drop("%ERR_TBL_TENPO")
+$Drop("%ERR_TBL_DPT")
+$Drop("%ERR_TBL_HANBAI")
+$Drop("%ERR_TBL_UNION")
+$Drop("%ERR_TBL")
+$Drop("PARAM")
+//# -----------------------------------------------------
+
+$Drop("WK_TANPIN_MEI_JOIN")
+
+//#対象外DPTのレコードを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","NEJOGE_TAISYOGAI_DPT","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI1_CD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","対象外DPTで抽出")
+//#MOD 2009.09.25 Katayama　対象データのカーソル名を変更(%MAIN_TARGET_CURは保持する) STR
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","対象外DPTで抽出")
+
+//# $DelColumn("WK_TANPIN_MEI","TORIHIKI_TS_#2")
+
+//#対象外クラスのレコードを除外
+//#　　V1.6  2009.07.16  VJC.福永   クラスのカラム値設定間違い修正             #(BUNRUI2_CD⇒BUNRUI5_CD)※クラスはBUNRUI5
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","NEJOGE_TAISYOGAI_CLASS","%NEJOUGE_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","NEJOGE_TAISYOGAI_CLASS","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","対象外クラスで抽出")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","対象外クラスで抽出")
+
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(対象外ラインは設定しない)※ラインはBUNRUI2
+//#対象外ラインのレコードを除外
+
+//#　　V1.5  2009.07.16  VJC.福永   値上下対象外設定の追加・修正               #(DPT代表ライン/クラス、DPTその他ライン/クラスを対象外に追加)
+//#DPT代表ラインコードのレコードを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_DAIHYO_LINE_CD","%NEJOUGE_TARGET_CUR","1","=BEGIN=","BUNRUI2_CD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_DAIHYO_LINE_CD","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI2_CD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","DPT代表ラインで抽出")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","DPT代表ラインで抽出")
+
+//#DPTその他ラインコードのレコードを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_SONOTA_LINE_CD","%NEJOUGE_TARGET_CUR","1","=BEGIN=","BUNRUI2_CD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_SONOTA_LINE_CD","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI2_CD","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","DPTその他ラインで抽出")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","DPTその他ラインで抽出")
+
+//#DPT代表クラスコードのレコードを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_DAIHYO_CLASS_CD","%NEJOUGE_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_DAIHYO_CLASS_CD","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","DPT代表クラスで抽出")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","DPT代表クラスで抽出")
+
+//#DPTその他クラスコードのレコードを除外
+$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_SONOTA_CLASS_CD","%NEJOUGE_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+//#$CreateJoin("WK_TANPIN_MEI_JOIN","WK_TANPIN_MEI","DPT_SONOTA_CLASS_CD","%MAIN_TARGET_CUR","1","=BEGIN=","BUNRUI5_CD_#1","=END=","=BEGIN=","PARAMETER_TX","=END=","INNER")
+$INOUT("WK_TANPIN_MEI_JOIN","N","Y")
+$Drop("WK_TANPIN_MEI_JOIN")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","DPTその他クラスで抽出")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","DPTその他クラスで抽出")
+
+//#新単品明細ログワークの対象データを抽出
+//#$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""COMP_CD"" = '%HOJIN_CD' AND ""TANAOROSHI_GENKA_KB"" = ""TANAOROSHI_GENKA_KB_BAIKA"" AND ""SHIIRE_HANBAI_KB"" = ""SHIIRE_HANBAI_KB_SHIIREHANBAI"" AND ""TEIKAN_KB"" != ""TEIKAN_KB_FUTEIKAN""")
+$MultiSearch("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","""COMP_CD"" = '%HOJIN_CD' AND ""TANAOROSHI_GENKA_KB"" = ""TANAOROSHI_GENKA_KB_BAIKA"" AND ""SHIIRE_HANBAI_KB"" = ""SHIIRE_HANBAI_KB_SHIIREHANBAI"" AND ""TEIKAN_KB"" != ""TEIKAN_KB_FUTEIKAN""")
+$ParaSet("%NEJOUGE_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","対象データ")
+//#$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""COMP_CD"" = '%HOJIN_CD' AND ""TANAOROSHI_GENKA_KB"" = ""TANAOROSHI_GENKA_KB_BAIKA"" AND ""SHIIRE_HANBAI_KB"" = ""SHIIRE_HANBAI_KB_SHIIREHANBAI"" AND ""TEIKAN_KB"" != ""TEIKAN_KB_FUTEIKAN""")
+//#$ParaSet("%MAIN_TARGET_CUR","__SID")
+//#$SetComment("WK_TANPIN_MEI","%MAIN_TARGET_CUR","対象データ")
+//#MOD 2009.09.25 Katayama　対象データのカーソル名を変更(%MAIN_TARGET_CURは保持する) END
+
+//# 計算対象の項目はNVLをかける
+$Calc("WK_TANPIN_MEI","NEBIKI_VL","1","*","NVL(@NEBIKI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SET_NEBIKI_VL","1","*","NVL(@SET_NEBIKI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","MIX_MATCH_NEBIKI_VL","1","*","NVL(@MIX_MATCH_NEBIKI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","URIAGE_KOMI_VL","1","*","NVL(@URIAGE_KOMI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","URIAGE_QT","1","*","NVL(@URIAGE_QT,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_DAY_VL","1","*","NVL(@BAITANKA_DAY_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","TAX_RT","1","*","NVL(@TAX_RT,0)","%TMP_TARGET_CUR")
+
+//##########################################################################
+$echo ■値引タイプコード条件分岐内容を計算
+//##########################################################################
+//#項目不足分を追加
+
+//#伝票種別と管理日付は先に追加済み
+
+//#理由区分
+$AddRealColumn("WK_TANPIN_MEI","TERMINAL_NB","RIYU_KB","String")
+//#理由区分詳細
+$AddRealColumn("WK_TANPIN_MEI","RIYU_KB","RIYU_SYOSAI_KB","String")
+//#数量
+$AddRealColumn("WK_TANPIN_MEI","RIYU_KB","SURYO_QT","Numeric(9,3)")
+//#数量(仕入用)
+$AddRealColumn("WK_TANPIN_MEI","SURYO_QT","SHIIRE_SURYO_QT","Numeric(9,3)")
+//#売単価（旧）
+$AddRealColumn("WK_TANPIN_MEI","SHIIRE_SURYO_QT","BAITANKA_OLD_VL","Numeric(7,0)")
+//#売単価（新）
+$AddRealColumn("WK_TANPIN_MEI","BAITANKA_OLD_VL","BAITANKA_NEW_VL","Numeric(7,0)")
+//#売価金額（税抜）
+$AddRealColumn("WK_TANPIN_MEI","BAITANKA_NEW_VL","BAIKA_ZEINUKI_VL","Numeric(13,0)")
+//#売価金額（税抜）
+$AddRealColumn("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","BAIKA_ZEIKOMI_VL","Numeric(13,0)")
+//#売価金額（税額）
+$AddRealColumn("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","BAIKA_ZEIGAKU_VL","Numeric(13,0)")
+//#値引金額計(※売上金額+値引金額+セット値引金額+MM値引金額)
+$AddRealColumn("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","TOTAL_NEBIKI_VL","Numeric(13,0)")
+$Calc("WK_TANPIN_MEI","TOTAL_NEBIKI_VL","1","*","+(+(+(@URIAGE_KOMI_VL,@NEBIKI_VL),@SET_NEBIKI_VL),@MIX_MATCH_NEBIKI_VL)","1")
+//#売価計算用の計算前金額
+$AddRealColumn("WK_TANPIN_MEI","TOTAL_NEBIKI_VL","BAIKA_SRC_VAL","Numeric(13,1)")
+
+
+//##########################################################################
+//#値引タイプコード = "0000"　値引金額 = "0"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_00"" AND ""NEBIKI_VL"" = 0 OR ""NEBIKI_VL"" IS NULL")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0000 値引金額0")
+
+//#理由区分
+$Calc("WK_TANPIN_MEI","RIYU_KB","1","*","$IF(=(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$"""",$IF(>(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$@RIYU_KB_NEAGE,$@RIYU_KB_NESAGE))","%TMP_TARGET_CUR")
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#売単価（旧） POS売変の場合は販売マスタの売単価(日別)をセット
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@BAITANKA_DAY_VL","%TMP_TARGET_CUR")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","FLOOR(/(@URIAGE_KOMI_VL,@URIAGE_QT))","%TMP_TARGET_CUR")
+
+//#売価計算用の計算前金額
+//#　　V1.7  2009.08.24  VJC.福永   値上時の売価差額計算考慮漏れ修正           #
+//#$Calc("WK_TANPIN_MEI","BAIKA_SRC_VAL","1","*","FLOOR(-(*(@BAITANKA_DAY_VL,@URIAGE_QT),@URIAGE_KOMI_VL))","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_SRC_VAL","1","*","IF(>(@BAITANKA_NEW_VL,@BAITANKA_OLD_VL),-(@URIAGE_KOMI_VL,FLOOR(*(@BAITANKA_DAY_VL,@URIAGE_QT))),-(FLOOR(*(@BAITANKA_DAY_VL,@URIAGE_QT)),@URIAGE_KOMI_VL))","%TMP_TARGET_CUR")
+
+//#理由区分詳細
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$IF(=(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$"""",$IF(>(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$@RIYU_D_KB_POS_NEAGE,$@RIYU_D_KB_POS_NESAGE))","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "0000"　値引金額 != "0"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_00"" AND  ""NEBIKI_VL"" != 0")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0000 値引金額0以外")
+
+//#理由区分
+//# $Calc("WK_TANPIN_MEI","RIYU_KB","1","*","$IF(=(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$"""",$IF(>(/(@URIAGE_KOMI_VL,@URIAGE_QT),@BAITANKA_DAY_VL),$@RIYU_KB_NEAGE,$@RIYU_KB_NESAGE))","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","RIYU_KB","1","*","$@RIYU_KB_NESAGE","%TMP_TARGET_CUR")
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+
+//#売価計算用の計算前金額
+$Calc("WK_TANPIN_MEI","BAIKA_SRC_VAL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+
+//#理由区分詳細
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_SONOTA","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード != "0000"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" != ""NEBIKI_TYPE_00""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0000以外")
+
+//#売価計算用の計算前金額
+$Calc("WK_TANPIN_MEI","BAIKA_SRC_VAL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+
+//#理由区分
+$Calc("WK_TANPIN_MEI","RIYU_KB","1","*","$@RIYU_KB_NESAGE","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "0001"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_01""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0001")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分 販売マスタ.売変タイプ＝'2'(値引額指定)または'3'(値引率指定) → グループ売変(本部指示)、それ以外 → 店舗値下げ（円引き）
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$IF(EQ($@BAIHEN_TYPE,$@BAIHEN_TYPE_GAKU),$@RIYU_D_KB_GRP_NESAGE,$IF(EQ($@BAIHEN_TYPE,$@BAIHEN_TYPE_PER),$@RIYU_D_KB_GRP_NESAGE,$@RIYU_D_KB_TENPO_EN_NESAGE))","%TMP_TARGET_CUR")
+
+
+
+//##########################################################################
+//#値引タイプコード = "0002"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_02""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0002")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分 販売マスタ.売変タイプ＝'2'(値引額指定)または'3'(値引率指定) → グループ売変(本部指示)、それ以外 → 店舗値下（％引き）
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$IF(EQ($@BAIHEN_TYPE,$@BAIHEN_TYPE_GAKU),$@RIYU_D_KB_GRP_NESAGE,$IF(EQ($@BAIHEN_TYPE,$@BAIHEN_TYPE_PER),$@RIYU_D_KB_GRP_NESAGE,$@RIYU_D_KB_TENPO_PER_NESAGE))","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "0003"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_03""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0003")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_SONOTA","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "0004"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_04""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0004")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_SONOTA","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "0005"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_05""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード0005")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_TENPO_OTSUTOME_NESAGE","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "1001"or"1002"or"1003"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_MM_01"" OR  ""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_MM_02"" OR ""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_MM_03""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード1001～1003")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$IF(GEQ($@MIX_MATCH_CD,$""9000""),$@RIYU_D_KB_MM_REG_NESAGE,$@RIYU_D_KB_MM_HONBU_NESAGE)","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "2001"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_CM_01""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード2001")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_CM_EN_NESAGE","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "2002"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_CM_02""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード2002")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_CM_PER_NESAGE","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "2011"or"2012"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_CM_03"" OR ""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_CM_04""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード2011～2012")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_CM_TORI_NESAGE","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#値引タイプコード = "2021"の場合
+//##########################################################################
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" = ""NEBIKI_TYPE_COUPONS""")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値引タイプコード2021")
+
+//#数量
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","@NEBIKI_QT","%TMP_TARGET_CUR")
+//#数量（仕入）
+//#Fukunaga 2009/09/12 Start
+//#$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","IF(<(@TOTAL_NEBIKI_VL,0),-1,1)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","@URIAGE_QT","%TMP_TARGET_CUR")
+//#Fukunaga 2009/09/12 End
+//#売単価（旧）
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","@TOTAL_NEBIKI_VL","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","IF(<(@BAITANKA_OLD_VL,0),*(@BAITANKA_OLD_VL,-1),@BAITANKA_OLD_VL)","1")
+//#売単価（新）
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","0","%TMP_TARGET_CUR")
+//#理由詳細区分
+$Calc("WK_TANPIN_MEI","RIYU_SYOSAI_KB","1","*","$@RIYU_D_KB_SONOTA","%TMP_TARGET_CUR")
+
+
+//##########################################################################
+//#税計算をまとめて行う
+//##########################################################################
+//# 内税
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""ZEI_KB"" = ""ZEI_KB_IN""")
+$ParaSet("%TMP_TAX_CUR","__SID")
+//#売価金額（税額） 税額 = 計算前の金額 * 税率(5) / ( 100 + 税率(5) )
+//# $Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","FLOOR(/(*(@BAIKA_SRC_VAL,@TAX_RT),+(100,@TAX_RT)))","%TMP_TAX_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","/(*(@BAIKA_SRC_VAL,@TAX_RT),+(100,@TAX_RT))","%TMP_TAX_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","IF(<(@BAIKA_ZEIGAKU_VL,0),CEIL(@BAIKA_ZEIGAKU_VL),FLOOR(@BAIKA_ZEIGAKU_VL))","%TMP_TAX_CUR")
+//#売価金額（税込） 税込 = 計算前の金額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","@BAIKA_SRC_VAL","%TMP_TAX_CUR")
+//#売価金額（税抜） 税抜 = 計算前の金額 - 税額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","-(@BAIKA_SRC_VAL,@BAIKA_ZEIGAKU_VL)","%TMP_TAX_CUR")
+
+//##########################################################################
+//# 外税
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""ZEI_KB"" = ""ZEI_KB_OUT""")
+$ParaSet("%TMP_TAX_CUR","__SID")
+//#売価金額（税額） 税額 = 計算前の金額 * 税率(5) / 100
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","/(*(@BAIKA_SRC_VAL,@TAX_RT),100)","%TMP_TAX_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","IF(<(@BAIKA_ZEIGAKU_VL,0),CEIL(@BAIKA_ZEIGAKU_VL),FLOOR(@BAIKA_ZEIGAKU_VL))","%TMP_TAX_CUR")
+//#売価金額（税込） 税込 = 計算前の金額 + 税額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","+(@BAIKA_SRC_VAL,@BAIKA_ZEIGAKU_VL)","%TMP_TAX_CUR")
+//#売価金額（税抜） 税抜 = 計算前の金額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","@BAIKA_SRC_VAL","%TMP_TAX_CUR")
+
+//##########################################################################
+//# 非課税
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""ZEI_KB"" != ""ZEI_KB_IN"" AND  ""ZEI_KB"" != ""ZEI_KB_OUT""")
+$ParaSet("%TMP_TAX_CUR","__SID")
+
+//#売価金額（税額） 税額 = 0
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","0","%TMP_TAX_CUR")
+//#売価金額（税込） 税込 = 計算前の金額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","@BAIKA_SRC_VAL","%TMP_TAX_CUR")
+//#売価金額（税抜） 税抜 = 計算前の金額
+$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","@BAIKA_SRC_VAL","%TMP_TAX_CUR")
+
+//##########################################################################
+//# 売価金額の絶対値計算
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""NEBIKI_TYPE_CD"" <> ""NEBIKI_TYPE_00"" OR ""NEBIKI_VL"" <> 0")
+$ParaSet("%TMP_ABS_CUR","__SID")
+//# 絶対値を取る
+//# Fukunaga 2009/09/12
+//#$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","IF(<(@BAIKA_ZEIKOMI_VL,0),*(@BAIKA_ZEIKOMI_VL,-1),@BAIKA_ZEIKOMI_VL)","%TMP_ABS_CUR")
+//#$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","IF(<(@BAIKA_ZEINUKI_VL,0),*(@BAIKA_ZEINUKI_VL,-1),@BAIKA_ZEINUKI_VL)","%TMP_ABS_CUR")
+//#$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","IF(<(@BAIKA_ZEIGAKU_VL,0),*(@BAIKA_ZEIGAKU_VL,-1),@BAIKA_ZEIGAKU_VL)","%TMP_ABS_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","*(@BAIKA_ZEIKOMI_VL,-1)","%TMP_ABS_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","*(@BAIKA_ZEINUKI_VL,-1)","%TMP_ABS_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","*(@BAIKA_ZEIGAKU_VL,-1)","%TMP_ABS_CUR")
+//# Fukunaga 2009/09/12
+
+$DelColumn("WK_TANPIN_MEI","TOTAL_NEBIKI_VL")
+$DelColumn("WK_TANPIN_MEI","BAIKA_SRC_VAL")
+$DelColumn("WK_TANPIN_MEI","ZEI_KB_IN")
+$DelColumn("WK_TANPIN_MEI","ZEI_KB_OUT")
+
+//##########################################################################
+//#データをインサート
+//##########################################################################
+
+//#項目を移動
+$MoveColumn("WK_TANPIN_MEI","BUNRUI1_CD_#1","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","PLU_1_CD","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","BUNRUI2_CD","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","BUNRUI5_CD_#1","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","HINMEI_KANJI_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","KIKAKU_KANJI_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","KIKAKU_KANJI_2_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","HINMEI_KANA_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","KIKAKU_KANA_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","KIKAKU_KANA_2_NA","RIYU_KB")
+$MoveColumn("WK_TANPIN_MEI","RIYU_SYOSAI_KB","SURYO_QT")
+$MoveColumn("WK_TANPIN_MEI","ZEI_KB","SURYO_QT")
+$MoveColumn("WK_TANPIN_MEI","TAX_RT","SURYO_QT")
+$MoveColumn("WK_TANPIN_MEI","BAITANKA_DAY_VL","BAIKA_ZEINUKI_VL")
+
+//#項目を削除
+$DelColumn("WK_TANPIN_MEI","BUNRUI1_CD")
+$DelColumn("WK_TANPIN_MEI","TORIHIKI_TS")
+$DelColumn("WK_TANPIN_MEI","CHECKER_CD")
+$DelColumn("WK_TANPIN_MEI","TERMINAL_NB")
+$DelColumn("WK_TANPIN_MEI","TOROHIKI_NB")
+$DelColumn("WK_TANPIN_MEI","TORIHIKI_MEISAI_NB")
+$DelColumn("WK_TANPIN_MEI","TORIKESHI_FG")
+$DelColumn("WK_TANPIN_MEI","HENPIN_FG")
+$DelColumn("WK_TANPIN_MEI","RE_ENTRY_FG")
+$DelColumn("WK_TANPIN_MEI","KINKYU_ADD_FG")
+$DelColumn("WK_TANPIN_MEI","HAIKI_FG")
+$DelColumn("WK_TANPIN_MEI","SCAN_COUNT_QT")
+$DelColumn("WK_TANPIN_MEI","KEYBOARD_COUNT_QT")
+$DelColumn("WK_TANPIN_MEI","REPORT_CD")
+$DelColumn("WK_TANPIN_MEI","PLU_2_CD")
+$DelColumn("WK_TANPIN_MEI","URIAGE_QT")
+$DelColumn("WK_TANPIN_MEI","URIAGE_KOMI_VL")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CD")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_QT")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_VL")
+$DelColumn("WK_TANPIN_MEI","SET_NEBIKI_VL")
+$DelColumn("WK_TANPIN_MEI","URIAGE_GENKA_VL")
+$DelColumn("WK_TANPIN_MEI","MIX_MATCH_CD")
+$DelColumn("WK_TANPIN_MEI","MIX_MATCH_NEBIKI_VL")
+$DelColumn("WK_TANPIN_MEI","DECIMAL_QT")
+$DelColumn("WK_TANPIN_MEI","INSERT_USER_ID")
+$DelColumn("WK_TANPIN_MEI","INSERT_TS")
+$DelColumn("WK_TANPIN_MEI","UPDATE_USER_ID")
+$DelColumn("WK_TANPIN_MEI","UPDATE_TS")
+$DelColumn("WK_TANPIN_MEI","RIYU_KB_NEAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_KB_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_POS_NEAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_POS_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_SONOTA")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_TENPO_EN_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_GRP_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_TENPO_PER_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_TENPO_OTSUTOME_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_MM_REG_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_MM_HONBU_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_CM_EN_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_CM_PER_NESAGE")
+$DelColumn("WK_TANPIN_MEI","RIYU_D_KB_CM_TORI_NESAGE")
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX")
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX_#1")
+$DelColumn("WK_TANPIN_MEI","TANAOROSHI_GENKA_KB")
+$DelColumn("WK_TANPIN_MEI","BUNRUI5_CD")
+$DelColumn("WK_TANPIN_MEI","SHIIRE_HANBAI_KB")
+$DelColumn("WK_TANPIN_MEI","TEIKAN_KB")
+$DelColumn("WK_TANPIN_MEI","ZAIKO_SYOHIN_CD")
+$DelColumn("WK_TANPIN_MEI","MAKER_CD")
+$DelColumn("WK_TANPIN_MEI","BAIHEN_TYPE")
+$DelColumn("WK_TANPIN_MEI","DELETE_FG_NORMAL")
+$DelColumn("WK_TANPIN_MEI","DENPYO_KB_NEJOGE_HAIKI")
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX_#2")
+$DelColumn("WK_TANPIN_MEI","TAX_RATE_KB")
+$DelColumn("WK_TANPIN_MEI","TANAOROSHI_GENKA_KB_BAIKA")
+$DelColumn("WK_TANPIN_MEI","SHIIRE_HANBAI_KB_SHIIREHANBAI")
+$DelColumn("WK_TANPIN_MEI","TEIKAN_KB_FUTEIKAN")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_00")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_01")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_02")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_03")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_04")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_05")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_MM_01")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_MM_02")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_MM_03")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CM_01")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CM_02")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CM_03")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_CM_04")
+$DelColumn("WK_TANPIN_MEI","NEBIKI_TYPE_COUPONS")
+$DelColumn("WK_TANPIN_MEI","BAIHEN_TYPE_GAKU")
+$DelColumn("WK_TANPIN_MEI","BAIHEN_TYPE_PER")
+//#　　V1.11  2009.09.17  片山 Str  不要列の削除 #
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX_#3")
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX_#4")
+$DelColumn("WK_TANPIN_MEI","PARAMETER_TX_#5")
+//#　　V1.11  2009.09.17  片山 End #
+
+//#作成しないデータを除外
+$MultiSearch("WK_TANPIN_MEI","1","""RIYU_SYOSAI_KB"" <> ''")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","新単品明細ログワーク")
+//#$ExtCursor("DT_POS_NEJOGE","WK_TANPIN_MEI","%TMP_TARGET_CUR","N","=BEGIN=","*","=END=")
+
+//# MOD 2009.09.25 Katayama　更新対象テーブルの変更 STR
+//#数値項目NULLにゼロをセット
+$Calc("WK_TANPIN_MEI","TAX_RT","1","*","NVL(@TAX_RT,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SURYO_QT","1","*","NVL(@SURYO_QT,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","SHIIRE_SURYO_QT","1","*","NVL(@SHIIRE_SURYO_QT,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_OLD_VL","1","*","NVL(@BAITANKA_OLD_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_NEW_VL","1","*","NVL(@BAITANKA_NEW_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAITANKA_DAY_VL","1","*","NVL(@BAITANKA_DAY_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEINUKI_VL","1","*","NVL(@BAIKA_ZEINUKI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIKOMI_VL","1","*","NVL(@BAIKA_ZEIKOMI_VL,0)","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","1","*","NVL(@BAIKA_ZEIGAKU_VL,0)","%TMP_TARGET_CUR")
+
+$RenameColumn("WK_TANPIN_MEI","PLU_1_CD","SYOHIN_CD")
+$RenameColumn("WK_TANPIN_MEI","HINMEI_KANJI_NA","SYOHIN_HINMEI_KANJI_NA")
+$RenameColumn("WK_TANPIN_MEI","BAITANKA_DAY_VL","M_BAITANKA_DAY_VL")
+
+//#項目を追加
+$AddRealColumn("WK_TANPIN_MEI","BAIKA_ZEIGAKU_VL","INSERT_USER_ID","String")
+$AddRealColumn("WK_TANPIN_MEI","INSERT_USER_ID","INSERT_TS","String")
+$AddRealColumn("WK_TANPIN_MEI","INSERT_TS","UPDATE_USER_ID","String")
+$AddRealColumn("WK_TANPIN_MEI","UPDATE_USER_ID","UPDATE_TS","String")
+
+//#更新日時
+$Calc("WK_TANPIN_MEI","INSERT_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","INSERT_USER_ID","1","*","$""URIB061""","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","UPDATE_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","%TMP_TARGET_CUR")
+$Calc("WK_TANPIN_MEI","UPDATE_USER_ID","1","*","$""URIB061""","%TMP_TARGET_CUR")
+//# MOD 2009.09.25 Katayama　更新対象テーブルの変更 END
+
+//# ADD 2009.09.25 Katayama　STR
+//#ワークテーブルの生成
+//#値上下POSワーク
+$MultiSearch("WK_TANPIN_MEI","%NEJOUGE_TARGET_CUR","""RIYU_SYOSAI_KB"" <> ''")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","値上下POSワーク")
+//# 2009.10.04 fukunaga upd start
+//#$ExtCursor("WK_NEJOGE_POS","WK_TANPIN_MEI","%TMP_TARGET_CUR","N","=BEGIN=","*","=END=")
+$ExtCursor("WK_NEJOGE_POS_ALL","WK_TANPIN_MEI","%TMP_TARGET_CUR","N","=BEGIN=","*","=END=")
+//# 2009.10.04 fukunaga upd end
+
+//#見切実績POSワーク
+$MultiSearch("WK_TANPIN_MEI","%MAIN_TARGET_CUR","""RIYU_SYOSAI_KB"" <> ''")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","見切実績POSワーク")
+$ExtCursor("WK_MIKIRI_POS","WK_TANPIN_MEI","%TMP_TARGET_CUR","N","=BEGIN=","*","=END=")
+//# ADD 2009.09.25 Katayama　END
+
+//#D5T保存
+//#$Rename("WK_NEJOGE_POS","DT_POS_NEJOGE")
+//# 2009.10.04 fukunaga del start
+//#$Save("%D5T_PATH","WK_NEJOGE_POS")
+//# 2009.10.04 fukunaga del end
+$Save("%D5T_PATH","WK_MIKIRI_POS")
+
+//# 2009.10.04 fukunaga ins start
+//# 定数項目を付与
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_NEJOGE_POS_ALL","1","RIYU_D_KB_POS_NEAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_NEJOGE_POS_ALL","1","RIYU_D_KB_POS_NESAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_MIKIRI_POS","1","RIYU_D_KB_POS_NEAGE","=END=")
+$SubExec("%COMMON_PATH","AppendBatchKey.opb","=BEGIN=","%D5T_PATH","WK_MIKIRI_POS","1","RIYU_D_KB_POS_NESAGE","=END=")
+
+//# POSサーバー売変のみ抽出
+$MultiSearch("WK_NEJOGE_POS_ALL","1","""RIYU_SYOSAI_KB"" = ""RIYU_D_KB_POS_NEAGE"" OR ""RIYU_SYOSAI_KB"" = ""RIYU_D_KB_POS_NESAGE""")
+$ParaSet("%POS_BAIHEN_CUR","__SID")
+$SetComment("WK_NEJOGE_POS_ALL","%POS_BAIHEN_CUR","POS売変データ")
+
+//# POSサーバー売変以外抽出
+$MultiSearch("WK_MIKIRI_POS","1","""RIYU_SYOSAI_KB"" != ""RIYU_D_KB_POS_NEAGE"" AND  ""RIYU_SYOSAI_KB"" != ""RIYU_D_KB_POS_NESAGE""")
+$ParaSet("%POS_NEJOGE_CUR","__SID")
+$SetComment("WK_MIKIRI_POS","%POS_NEJOGE_CUR","値上下データ")
+
+//# 結合
+$Union("WK_NEJOGE_POS","WK_NEJOGE_POS_ALL","WK_MIKIRI_POS","%POS_BAIHEN_CUR","%POS_NEJOGE_CUR","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+
+//#項目を削除
+$DelColumn("WK_NEJOGE_POS","RIYU_D_KB_POS_NEAGE")
+$DelColumn("WK_NEJOGE_POS","RIYU_D_KB_POS_NESAGE")
+
+//#D5T保存
+$Save("%D5T_PATH","WK_NEJOGE_POS")
+//# 2009.10.04 fukunaga ins end
+
+//#CSV出力
+//#　　V1.1  2009.07.03  VJC.福永   結果csvの出力先指定変更の為、引数変更      #
+$TxtWriteEx("WK_NEJOGE_POS","CSV","%OUT_PATH","IF_DT_POS_NEJOGE.csv","1","*","=BEGIN=","DENPYO_KB","KANRI_DT","TENPO_CD","BUNRUI1_CD","SYOHIN_CD","BUNRUI2_CD","BUNRUI5_CD","SYOHIN_HINMEI_KANJI_NA","KIKAKU_KANJI_NA","KIKAKU_KANJI_2_NA","HINMEI_KANA_NA","KIKAKU_KANA_NA","KIKAKU_KANA_2_NA","RIYU_KB","RIYU_SYOSAI_KB","ZEI_KB","TAX_RT","SURYO_QT","SHIIRE_SURYO_QT","BAITANKA_OLD_VL","BAITANKA_NEW_VL","M_BAITANKA_DAY_VL","BAIKA_ZEINUKI_VL","BAIKA_ZEIKOMI_VL","BAIKA_ZEIGAKU_VL","INSERT_USER_ID","INSERT_TS","UPDATE_USER_ID","UPDATE_TS","=END=","N","1")
+
+
+//##########################################################################
+$echo ■終了ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061030 値上下データ作成処理 処理を終了します","=END=")

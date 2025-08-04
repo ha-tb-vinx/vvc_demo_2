@@ -1,0 +1,173 @@
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－売上管理　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　オンメモリ用マスタデータ取込処理                      #
+//#　ジョブＩＤ　　　：　URIB161010                                            #
+//#　プログラムＩＤ　：　OnMemoryMasterImport                                  #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.05.26                                            #
+//#                                                                            #
+//#　処理概要　：　オンメモリ用マスタデータ取込処                              #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　Commonファイルパス                                              #
+//#　　%2　―　マクロファイルパス                                              #
+//#　　%3　―　D5Tファイルパス                                                 #
+//#　　%4　―　CSVファイルパス                                                 #
+//#　　%5　―　カタログファイルパス                                            #
+//#　　%6　―　法人コード                                                      #
+//#                                                                            #
+//#　コメント　：　                                                            #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.05.26  新坂       新規作成                                   #
+//#　　V1.1  2009.08.31  安田       履歴管理仕様追加                           #
+//#　　V1.2  2009.09.17  片山       販売マスタのレイアウト変更                 #
+//##############################################################################
+
+//##############################################################################
+$echo ■Ｓ１．初期処理
+//##############################################################################
+
+//##########################################################################
+$echo ■Ｓ１－１．クリア
+//##########################################################################
+$ClearWS()
+$ParaAllClear()
+
+//##########################################################################
+$echo ■Ｓ１－２．パラメータセット
+//##########################################################################
+//#Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+//#マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+//#D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+//#CSVパス
+$ParaSet("%CSV_PATH",%4)
+//#カタログパス
+$ParaSet("%CTLG_PATH",%5)
+//# 法人コード
+$ParaSet("%COMP_CD",%6)
+//#バッチID
+$ParaSet("%BATCH_ID","URIB161")
+
+
+//##############################################################################
+$echo ■Ｓ２．本処理
+//##############################################################################
+
+//##########################################################################
+$echo ■Ｓ２－１．CSVインポート
+//##########################################################################
+//# 最新の販売マスタをインポート（会計共通側からのFTP送信分）
+$TxtReadAppointedFile("R_FI_HANBAI_NEW","%CTLG_PATH","IF_R_FI_HANBAI.CTLG","%CSV_PATH","IF_R_FI_HANBAI.csv")
+
+//# キー項目にTRIMをかける
+$Calc("R_FI_HANBAI_NEW","TENPO_CD","1","*","$RTrim($@TENPO_CD)","1")
+$Calc("R_FI_HANBAI_NEW","SYOHIN_CD","1","*","$RTrim($@SYOHIN_CD)","1")
+$Calc("R_FI_HANBAI_NEW","BUNRUI1_CD","1","*","$RTrim($@BUNRUI1_CD)","1")
+$Calc("R_FI_HANBAI_NEW","BUNRUI2_CD","1","*","$RTrim($@BUNRUI2_CD)","1")
+$Calc("R_FI_HANBAI_NEW","BUNRUI5_CD","1","*","$RTrim($@BUNRUI5_CD)","1")
+
+//# システムコントロール呼び出し
+$Load("%D5T_PATH","SYSTEM_CONTROL")
+
+//# 既存の販売マスタをロード
+$Load("%D5T_PATH","R_FI_HANBAI")
+
+//# 適用開始日を整数型に変換
+$TypeConv("R_FI_HANBAI","TEKIYO_START_DT","Integer")
+
+//# システムコントロールからバッチ日付取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'URIAGE' AND ""PARAMETER_ID"" = 'BATCH_DT'")
+$SetComment("SYSTEM_CONTROL","2","バッチ日付")
+
+//# システムコントロールからマスタ保有日数取得
+$MultiSearch("SYSTEM_CONTROL","1","""SUBSYSTEM_ID"" = 'URIAGE' AND ""PARAMETER_ID"" = 'MASTER_HOYU_NISU'")
+$SetComment("SYSTEM_CONTROL","3","販売マスタ保有日数")
+
+//# 整数型と日付型のバッチ日付・マスタ保有日数を用意
+$TypeConv("SYSTEM_CONTROL","PARAMETER_TX","Integer")
+$TypeConv("SYSTEM_CONTROL","PARAMETER_TX","Date")
+
+//# バッチ日付に1日プラス（最新の販売マスタ適用開始日基準の為）
+$Calc("SYSTEM_CONTROL","PARAMETER_TX_#2","1","*","AddDays(@PARAMETER_TX_#2,1)","2")
+
+//# バッチ日付と保有日数で計算する為、JOINする
+$CreateJoin("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL","SYSTEM_CONTROL","2","3","=BEGIN=","SUBSYSTEM_ID","=END=","=BEGIN=","SUBSYSTEM_ID","=END=","INNER")
+$JoinRealize("SYSTEM_CONTROL_JOIN","SYSTEM_CONTROL_JOIN_REAL","1","N","N","=BEGIN=","*","=END=")
+
+//# 不要なテーブルを削除
+$Drop("SYSTEM_CONTROL_JOIN")
+$Drop("SYSTEM_CONTROL")
+
+//# バッチ日付から保有日数を引いて基準日を取得
+$Calc("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#1","1","*","AddDays(@PARAMETER_TX_#1,-(0,@PARAMETER_TX_#5))","1")
+
+//# 法人コード付与
+$AddRealColumn("SYSTEM_CONTROL_JOIN_REAL","[RecNo]","COMP_CD","String")
+$Fill("SYSTEM_CONTROL_JOIN_REAL","COMP_CD","1","*","0000","1")
+
+//# 基準となる日付を日付型から文字列型を経て、整数型に変換
+$Calc("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX","1","*","$DateToStr(@PARAMETER_TX_#1,1)","1")
+$Calc("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#2","1","*","StrToInt($@PARAMETER_TX)","1")
+
+//# 不要な項目を削除
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","SUBSYSTEM_ID")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_ID")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","NO_CACHE_FG")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","SYUSEI_KANO_FG")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PLACE_NB")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","DATA_KB")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","EXPLANATION")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","SUBSYSTEM_ID_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_ID_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#3")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#4")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PARAMETER_TX_#5")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","NO_CACHE_FG_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","SYUSEI_KANO_FG_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","PLACE_NB_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","DATA_KB_#1")
+$DelColumn("SYSTEM_CONTROL_JOIN_REAL","EXPLANATION_#1")
+
+//# 既存の販売マスタに基準日をJOINする
+$CreateJoin("R_FI_HANBAI_JOIN","R_FI_HANBAI","SYSTEM_CONTROL_JOIN_REAL","1","1","=BEGIN=","COMP_CD","=END=","=BEGIN=","COMP_CD","=END=","INNER")
+//# 2009.09.17 Katayama STR
+$JoinRealize("R_FI_HANBAI_JOIN","R_FI_HANBAI_JOIN_REAL","1","N","N","=BEGIN=","R_FI_HANBAI.COMP_CD","R_FI_HANBAI.TENPO_CD","R_FI_HANBAI.SYOHIN_CD","R_FI_HANBAI.TEKIYO_START_DT","R_FI_HANBAI.TEKIYO_START_DT_#1","R_FI_HANBAI.ZAIKO_SYOHIN_CD","R_FI_HANBAI.JYOHO_SYOHIN_CD","R_FI_HANBAI.MAKER_CD","R_FI_HANBAI.TORIHIKISAKI_CD","R_FI_HANBAI.BUNRUI1_CD","R_FI_HANBAI.BUNRUI2_CD","R_FI_HANBAI.BUNRUI5_CD","R_FI_HANBAI.TEIKAN_KB","R_FI_HANBAI.ZEI_KB","R_FI_HANBAI.TAX_RATE_KB","R_FI_HANBAI.TAX_RT","R_FI_HANBAI.HACHU_UNIT_IRISU_QT","R_FI_HANBAI.HACHU_UNIT_NA","R_FI_HANBAI.HACHU_TANI_KANA_NA","R_FI_HANBAI.GENTANKA_VL","R_FI_HANBAI.GENTANKA_NOMAL_VL","R_FI_HANBAI.GENTANKA_DAY_VL","R_FI_HANBAI.BAITANKA_VL","R_FI_HANBAI.BAITANKA_NOMAL_VL","R_FI_HANBAI.BAITANKA_DAY_VL","R_FI_HANBAI.BAIHEN_TYPE","R_FI_HANBAI.SHIIRE_HANBAI_KB","R_FI_HANBAI.MST_SIYOFUKA_KB","SYSTEM_CONTROL_JOIN_REAL.PARAMETER_TX_#2","=END=")
+//#$JoinRealize("R_FI_HANBAI_JOIN","R_FI_HANBAI_JOIN_REAL","1","N","N","=BEGIN=","R_FI_HANBAI.COMP_CD","R_FI_HANBAI.TENPO_CD","R_FI_HANBAI.SYOHIN_CD","R_FI_HANBAI.TEKIYO_START_DT","R_FI_HANBAI.TEKIYO_START_DT_#1","R_FI_HANBAI.ZAIKO_SYOHIN_CD","R_FI_HANBAI.JYOHO_SYOHIN_CD","R_FI_HANBAI.MAKER_CD","R_FI_HANBAI.HINMEI_KANJI_NA","R_FI_HANBAI.KIKAKU_KANJI_NA","R_FI_HANBAI.KIKAKU_KANJI_2_NA","R_FI_HANBAI.HINMEI_KANA_NA","R_FI_HANBAI.KIKAKU_KANA_NA","R_FI_HANBAI.KIKAKU_KANA_2_NA","R_FI_HANBAI.REC_HINMEI_KANA_NA","R_FI_HANBAI.TORIHIKISAKI_CD","R_FI_HANBAI.BUNRUI1_CD","R_FI_HANBAI.BUNRUI2_CD","R_FI_HANBAI.BUNRUI5_CD","R_FI_HANBAI.TEIKAN_KB","R_FI_HANBAI.ZEI_KB","R_FI_HANBAI.TAX_RATE_KB","R_FI_HANBAI.TAX_RT","R_FI_HANBAI.HACHU_UNIT_IRISU_QT","R_FI_HANBAI.HACHU_UNIT_NA","R_FI_HANBAI.HACHU_TANI_KANA_NA","R_FI_HANBAI.GENTANKA_VL","R_FI_HANBAI.GENTANKA_NOMAL_VL","R_FI_HANBAI.GENTANKA_DAY_VL","R_FI_HANBAI.BAITANKA_VL","R_FI_HANBAI.BAITANKA_NOMAL_VL","R_FI_HANBAI.BAITANKA_DAY_VL","R_FI_HANBAI.BAIHEN_TYPE","R_FI_HANBAI.SHIIRE_HANBAI_KB","R_FI_HANBAI.MST_SIYOFUKA_KB","R_FI_HANBAI.INSERT_USER_ID","R_FI_HANBAI.INSERT_TS","R_FI_HANBAI.UPDATE_USER_ID","R_FI_HANBAI.UPDATE_TS","SYSTEM_CONTROL_JOIN_REAL.PARAMETER_TX_#2","=END=")
+//# 2009.09.17 Katayama END
+
+//# 不要なテーブルを削除
+$Drop("R_FI_HANBAI_JOIN")
+
+//# 適用開始日＞基準日となるような販売マスタを抽出
+$MultiSearch("R_FI_HANBAI_JOIN_REAL","1","""TEKIYO_START_DT_#1"" > ""PARAMETER_TX""")
+
+//# 最新の販売マスタとJOINする為、不要な項目を削除
+$DelColumn("R_FI_HANBAI_JOIN_REAL","PARAMETER_TX")
+$DelColumn("R_FI_HANBAI_JOIN_REAL","TEKIYO_START_DT_#1")
+
+//# 最新の販売マスタと既存の販売マスタを縦結合
+$Union("R_FI_HANBAI_JOIN_REAL_UNION","R_FI_HANBAI_JOIN_REAL","R_FI_HANBAI_NEW","2","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+
+//# 新しく出来た販売マスタを既存に上書きする為、テーブル名称変更
+$Rename("R_FI_HANBAI_OLD","R_FI_HANBAI")
+$Rename("R_FI_HANBAI","R_FI_HANBAI_JOIN_REAL_UNION")
+
+//# 販売マスタを保存
+$Save("%D5T_PATH","R_FI_HANBAI")
+
+
+//##############################################################################
+$echo ■Ｓ３．終了処理
+//##############################################################################
+

@@ -1,0 +1,74 @@
+//#SUB
+//#############################################################################
+//#
+//# 【共通】カレンダーマスタ処理
+//#
+//#############################################################################
+
+$echo ■カレンダーマスタ読込処理開始
+
+//#############################################################################
+//#	パラメータセット
+//#############################################################################
+//# %1=Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+
+//# %2=マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+
+//# %3=D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+
+//# %4=CSVパス
+$ParaSet("%CSV_PATH",%4)
+
+//# %5=カタログパス
+$ParaSet("%CTLG_PATH",%5)
+
+//# %6=法人コード
+$ParaSet("%COMP_CD",%6)
+
+//# ---------------------------------------------------------------------------
+//# カレンダマスタ処理
+//# ---------------------------------------------------------------------------
+
+//# カレンダマスタの読込
+$Load("%D5T_PATH","R_CALENDAR.D5T")
+$Rename("R_CALENDAR","R_CALENDAR_D5T")
+$SetComment("R_CALENDAR","1","READ_R_CALENDAR")
+
+//# 法人コードで絞りこむ
+$MultiSearch("R_CALENDAR","1","""COMP_CD"" = '%COMP_CD'")
+
+$SetComment("R_CALENDAR","2","WHERE COMP_CD")
+
+//# 会計年月、会計年月日項目の追加
+$AddRealColumn("R_CALENDAR","UPDATE_TS","WK_KAIKEI_YM","String")
+
+$AddRealColumn("R_CALENDAR","WK_KAIKEI_YM","WK_KAIKEI_YMD","String")
+
+//# 会計年月に値をセット
+$Calc("R_CALENDAR","WK_KAIKEI_YM","1","*","$&($@KAIKEI_KI,$@KAIKEI_MN)","2")
+
+//# 会計年月日に値をセット
+$Calc("R_CALENDAR","WK_KAIKEI_YMD","1","*","$&($@WK_KAIKEI_YM,$""01"")","2")
+
+//# 未仮締め、未本締のデータを取得
+$MultiSearch("R_CALENDAR","2","""KARIZIMESYORI_KB"" = '0' AND ""HONZIMESYORI_KB"" = '0'")
+
+$SetComment("R_CALENDAR","3","GET_MI_SHIME_DATE")
+
+//# 開始日がNOT NULLのデータを取得する
+$MultiSearch("R_CALENDAR","3","""START_DT"" <> ''")
+
+$SetComment("R_CALENDAR","4","IS NOT NULL START_DT")
+
+//# MIN開始年月日、会計年月、年月日データの取得
+
+$XSUMNumeric("MIN_START_DT","R_CALENDAR","4","=BEGIN=","=END=","=BEGIN=","START_DT","0","0","1","-1","0","0","0","0","0","0","WK_KAIKEI_YM","0","0","1","-1","0","0","0","0","0","0","WK_KAIKEI_YMD","0","0","1","-1","0","0","0","0","0","0","=END=")
+$SetComment("MIN_START_DT","1","PROC_START_DT")
+
+
+//#############################################################################
+$echo ■カレンダマスタ読込処理終了
+//#############################################################################

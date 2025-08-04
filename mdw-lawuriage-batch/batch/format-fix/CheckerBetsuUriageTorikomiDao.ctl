@@ -1,0 +1,15 @@
+OPTIONS(LOAD=-1,ROWS=-1,ERRORS=0)
+LOAD DATA
+CHARACTERSET UTF8
+TRUNCATE
+INTO TABLE WK_CHECKER_SEISAN_URI
+TRAILING NULLCOLS
+(
+    COMP_CD                  CONSTANT "0000",
+    KEIJO_DT                 POSITION(5:12) CHAR,
+    TENPO_CD                 POSITION(1:4) CHAR,
+    CHECKER_CD               POSITION(21:27) CHAR,
+    CHECKER_NA               POSITION(38:57) CHAR,
+    CHECKER_KANA_NA          POSITION(28:37) CHAR,
+    DAY_NET_VL               POSITION(69:79) "decode(:DAY_NET_VL,' ',null,'　',null,to_number(:DAY_NET_VL))"
+)

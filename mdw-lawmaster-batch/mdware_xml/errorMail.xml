@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+RBSite BatchLog繧ｨ繝ｩ繝ｼ繝｡繝ｼ繝ｫ騾∽ｿ｡XML
+
+Mail繧ｿ繧ｰ:繝｡繝ｼ繝ｫ騾∽ｿ｡譎ゅ・險ｭ螳壹ｄ菴ｿ逕ｨ縺吶ｋSMTP繧ｵ繝ｼ繝舌↑縺ｩ縺ｫ縺､縺・※險倩ｿｰ縺励∪縺吶・
+	CharSet		: 菴ｿ逕ｨ縺吶ｋ譁・ｭ励さ繝ｼ繝峨・E-mail縺ｧ縺ｯiso-2022-jp縺御ｸ闊ｬ逧・〒縺吶・
+	SmtpProp	: 
+	SmtpServer	: 騾∽ｿ｡譎ゅ↓菴ｿ逕ｨ縺吶ｋSMTP繧ｵ繝ｼ繝舌・IP繧｢繝峨Ξ繧ｹ縲・
+	FromAddress	: 騾∽ｿ｡閠・・繧｢繝峨Ξ繧ｹ縲・
+	FromName	: 騾∽ｿ｡閠・錐縲・
+	Template	: 繝舌ャ繝√お繝ｩ繝ｼ繝｡繝ｼ繝ｫ譛ｬ譁・・繝・Φ繝励Ξ繝ｼ繝医・text%縺ｮ驛ｨ蛻・↓繧ｨ繝ｩ繝ｼ譛ｬ譁・′謖ｿ蜈･縺輔ｌ縺ｾ縺吶・
+
+ToAddress繧ｿ繧ｰ・壹Γ繝ｼ繝ｫ縺ｮ騾∽ｿ｡蜈医・諠・ｱ繧堤判髱｢縺ｫ縺ｦ險ｭ螳壹＠縺ｾ縺吶・
+
+--><ErrorMail>
+	<Mail>
+		<CharSet>iso-2022-jp</CharSet>
+		<SmtpProp>mail.smtp.host</SmtpProp>
+		<SmtpServer>192.1.1.1</SmtpServer>
+		<FromAddress>web-edi@xxxxxxx.aaa.co.jp</FromAddress>
+		<FromName>WEB-EDI</FromName>
+		<Template>
+RBSite縺ｧ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲ゆｸ玖ｨ倥・騾｣邨｡蜈医↓騾｣邨｡縺励※縺上□縺輔＞縲・
+06-XXXX-YYYY
+
+
+--- Message ---
+%text%
+---------------
+		</Template>
+	</Mail>
+</ErrorMail>

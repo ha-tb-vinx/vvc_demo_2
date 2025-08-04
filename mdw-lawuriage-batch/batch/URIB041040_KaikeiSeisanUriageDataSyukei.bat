@@ -1,0 +1,24 @@
+REM @echo off
+REM ============================================================================
+REM タイトル	：会計精算売上データ集計処理
+REM 説明	：会計精算売上データ集計処理を行う。
+REM version 1.00 2016/11/14 Y.Itaki:新規
+REM ============================================================================
+
+SET BATCHF_HOME=@filter.shellscript.baseDirectory.value@
+
+CALL %BATCHF_HOME%\batch\SetBatchPath.bat
+
+REM ===== 会計精算売上データ取込処理
+%EXECJAVA% jp.co.vinculumjapan.swc.commons.dao.BatchController URIB041040
+IF %ERRORLEVEL% NEQ 0 goto error
+
+:end
+
+CD %BATCHF_HOME%
+
+exit 0
+
+:error
+
+exit 1

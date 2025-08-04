@@ -1,0 +1,99 @@
+//#SUB
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　本締め済み月取得処理	                               #
+//#　プログラムＩＤ　：　GetHonzimeYM		                               #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.06.15                                            #
+//#                                                                            #
+//#　処理概要　：　カレンダマスタから本締め済み月を取得する		       #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　法人コード                                                      #
+//#　　%2　―　D5Tパス                                                         #
+//#                                                                            #
+//#　コメント　：　                                                            #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.06.11  松本       新規作成                                   #
+//##############################################################################
+
+
+//##############################################################################
+$echo ■ＳＵＢ１．初期処理
+//##############################################################################
+$ParaSet("%COMP_CD",%1)
+$ParaSet("%D5T_PATH",%2)
+
+
+//##############################################################################
+$echo ■ＳＵＢ２．本処理
+//##############################################################################
+$Load("%D5T_PATH","R_CALENDAR")
+
+
+//##########################################################################
+$echo ■ＳＵＢ２－１．バッチコントロールから本締処理区分の定数を取得
+//##########################################################################
+$ParaSet("%CTRL_KEY","SIMESYORI_KB_SIJI")
+
+//#結合キーを列を追加
+$AddRealColumn("R_CALENDAR","[RecNo]","JOINT_KEY","String")
+//#項目追加先テーブルに結合キーを追加
+$Calc("R_CALENDAR","JOINT_KEY","1","*","$""%CTRL_KEY""","1")
+//#コントロールテーブルをロード
+$Load("%D5T_PATH","R_BATCH_CONTROL")
+
+//#キー項目抽出
+$MultiSearch("R_BATCH_CONTROL","1","""KEY_CD"" = '%CTRL_KEY'")
+$ParaSet("%MAIN_TARGET_CUR","__SID")
+$SetComment("R_BATCH_CONTROL","%MAIN_TARGET_CUR","キー項目抽出")
+
+//#結合
+$CreateJoin("R_CALENDAR_JOIN","R_CALENDAR","R_BATCH_CONTROL","1","%MAIN_TARGET_CUR","=BEGIN=","JOINT_KEY","=END=","=BEGIN=","KEY_CD","=END=","INNER")
+
+//#項目転送
+$ColumnTransfer("R_CALENDAR_JOIN","VALUE_TX")
+$Drop("R_CALENDAR_JOIN")
+$Drop("R_BATCH_CONTROL")
+$DelColumn("R_CALENDAR","JOINT_KEY")
+$RenameColumn("R_CALENDAR","VALUE_TX","%CTRL_KEY")
+
+
+//##########################################################################
+$echo ■ＳＵＢ２－２．カレンダマスタからユーザ会計年月の最大を取得
+//##########################################################################
+//#法人コードと仮締処理区分 = "1"でカレンダマスタを絞込み
+$MultiSearch("R_CALENDAR","1","""COMP_CD"" = '%COMP_CD' AND ""HONZIMESYORI_KB"" = ""SIMESYORI_KB_SIJI""")
+$ParaSet("%CALENDAR_TARGET_CUR","__SID")
+$SetComment("R_CALENDAR","%CALENDAR_TARGET_CUR","本締め月対象")
+
+//#ユーザ会計年・ユーザ会計月を結合する（最大を取得するため）
+$AddRealColumn("R_CALENDAR","USER_KAIKEI_MN","USER_KAIKEI_YM","String")
+$Calc("R_CALENDAR","USER_KAIKEI_YM","1","*","$&($@USER_KAIKEI_YR,$@USER_KAIKEI_MN)","%CALENDAR_TARGET_CUR")
+
+//#結合した会計月でソート
+$Sort("R_CALENDAR","USER_KAIKEI_YM","%CALENDAR_TARGET_CUR","DSC")
+$ParaSet("%CALENDAR_TARGET_CUR","__SID")
+$SetComment("R_CALENDAR","%CALENDAR_TARGET_CUR","本締め月でソート")
+
+//#最大の本締め月を取得
+$AddRealColumn("R_CALENDAR","[RecNo]","ROWNUM","Integer")
+$Calc("R_CALENDAR","ROWNUM","1","*","RowNo","%CALENDAR_TARGET_CUR")
+$MultiSearch("R_CALENDAR","%CALENDAR_TARGET_CUR","""ROWNUM"" = 1")
+$ParaSet("%CALENDAR_TARGET_CUR","__SID")
+$SetComment("R_CALENDAR","%CALENDAR_TARGET_CUR","本締め月")
+
+
+//##############################################################################
+$echo ■ＳＵＢ３．終了処理
+//##############################################################################
+//#有効行を1行のみを取得
+$ExtCursor("R_CALENDAR_REAL","R_CALENDAR","%CALENDAR_TARGET_CUR","N","=BEGIN=","COMP_CD","KAIKEI_KI","KAIKEI_MN","START_DT","END_DT","KESAN_SYORI_KB","KARIZIMESYORI_KB","KARIZIMETORIKESHI_KB","HONZIMESYORI_KB","USER_KAIKEI_YR","USER_KAIKEI_MN","KARIZIME_QT","INSERT_USER_ID","INSERT_TS","UPDATE_USER_ID","UPDATE_TS","=END=")
+$Drop("R_CALENDAR")
+$Rename("R_CALENDAR","R_CALENDAR_REAL")

@@ -1,0 +1,4 @@
+eclipse.preferences.version=1
+encoding//batch/properties/database.properties=SHIFT_JIS
+encoding//build/filters/integration.properties=SHIFT_JIS
+encoding//build/filters/production.properties=SHIFT_JIS

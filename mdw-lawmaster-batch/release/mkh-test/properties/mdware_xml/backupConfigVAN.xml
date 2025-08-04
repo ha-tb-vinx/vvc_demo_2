@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ファイルバックアップ用の設定ファイル。
+	１ファイルごとに<Target>タグで指定してください。
+	<Target>タグ内で、以下の設定を行ってください。
+	動作の詳細は FileBackupUtil のJavadocあたりを見てください。
+
+	<setActionOfNotExist>
+		バックアップ元ファイルが存在しなかった場合の動作
+		EXISTS_THROW_EXCEPTION or EXISTS_NO_REACTION で指定。
+		指定しなければ EXISTS_THROW_EXCEPTION
+
+	<setActionOfExist>
+		バックアップ先ファイルが既に存在していた場合の動作
+		EXISTS_THROW_EXCEPTION or EXISTS_THROW_EXCEPTION or EXISTS_NO_REACTION で指定
+		指定しなければ EXISTS_THROW_EXCEPTION
+
+	<setCompression>
+		圧縮を行うか行わないか
+		COMPRESSION_ZIP or COMPRESSION_NONE で指定。
+		指定しなければ COMPRESSION_ZIP
+
+	<setFilenameAddition>
+		バックアップ先ファイル名命名規則
+		FILENAME_ADD_TIMESTAMP or FILENAME_KEEP_ORIGINAL or FILENAME_SET_FILENAME で指定。
+		指定しなければ FILENAME_ADD_TIMESTAMP
+
+	<setGeneration>世代管理数
+		数値を指定。	0なら世代管理を行わない。
+		指定しなければ 0
+
+	<setDeleteOnBackUp>バックアップ後処理
+		AFTERPROCESS_TO_FROMFILE_NONE or AFTERPROCESS_TO_FROMFILE_DELETE で指定。
+		指定しなければ AFTERPROCESS_TO_FROMFILE_NONE
+
+	<setFromPath>
+		バックアップ元パス。 必須パラメータ。
+
+	<setFromFileName>
+		バックアップ元ファイル名。 必須パラメータ。
+
+	<setToPath>
+		バックアップ先パス。 必須パラメータ。
+
+	<setToFileName>
+		バックアップ先ファイル名。 オリジナルを保持する設定でなければ必須。
+-->
+<FileBackup>
+<!-- マスタ管理[MSTB905060](S) -->
+	<!-- VAN商品マスタ データファイル名 -->
+	<Target>
+		<setActionOfNotExist>EXISTS_NO_REACTION</setActionOfNotExist>
+		<setActionOfExist>EXISTS_THROW_EXCEPTION</setActionOfExist>
+		<setCompression>COMPRESSION_ZIP</setCompression>
+		<setFilenameAddition>FILENAME_ADD_TIMESTAMP</setFilenameAddition>
+		<setGeneration>30</setGeneration>
+		<setDeleteOnBackUp>AFTERPROCESS_TO_FROMFILE_DELETE</setDeleteOnBackUp>
+		<setFromPath>E:\mdware_mkh\datas\zengin\master\distribute</setFromPath>
+		<setFromFileName>LA0103000001</setFromFileName>
+		<setToPath>E:\mdware_mkh\datas\zengin\master\distribute\backup</setToPath>
+		<setToFileName></setToFileName>
+	</Target>
+<!-- マスタ管理[MSTB905060](E) -->
+
+</FileBackup>

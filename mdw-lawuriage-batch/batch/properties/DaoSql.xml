@@ -1,0 +1,5512 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<DaoSql>
+	<!-- 精算状況データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.SeisanJokyoDataCreateDao">
+		<SQL id="createSeisanJokyo">
+			<![CDATA[
+			INSERT INTO
+				DT_TEN_SEISAN_STATE
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				ISAN_SEISAN_STATE_FG,
+				TENANT_SEISASN_STATE_FG,
+				SEISAN_STATE_FG,
+				BUNRUI1_SEISAN_STATE_FG,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			(SELECT
+				TENPO.HOJIN_CD,
+				?,
+				TENPO.TENPO_CD,
+				'0',
+				CASE
+					WHEN RT.COMP_CD IS NULL THEN
+						'2'
+					ELSE
+						'1'
+				END,
+				'0',
+				'0',
+				?,
+				?,
+				?,
+				?
+			FROM
+				R_TENPO TENPO
+			LEFT JOIN
+				(SELECT
+					RT.COMP_CD,
+					RT.TENPO_CD
+				FROM
+					R_TENANT RT
+				INNER JOIN
+					(SELECT
+						COMP_CD,
+						TENANT_CD,
+						TENPO_CD,
+						MAX(TEKIYO_START_DT) TEKIYO_START_DT
+					FROM
+						R_TENANT
+					WHERE
+						COMP_CD = ?
+					AND TEKIYO_START_DT <= ?
+					AND TORIKESHI_FG = '0'
+					GROUP BY
+						COMP_CD,
+						TENANT_CD,
+						TENPO_CD
+					) TMP_RT
+				ON
+					TMP_RT.COMP_CD = RT.COMP_CD
+				AND TMP_RT.TENANT_CD = RT.TENANT_CD
+				AND TMP_RT.TENPO_CD = RT.TENPO_CD
+				AND TMP_RT.TEKIYO_START_DT = RT.TEKIYO_START_DT
+				AND RT.TORIKESHI_FG = '0'
+				AND RT.DELETE_FG = '0'
+				AND RT.URIAGE_SEISAN_KB = '3'
+				GROUP BY
+					RT.COMP_CD,
+					RT.TENPO_CD
+				) RT
+			ON
+				RT.COMP_CD = TENPO.HOJIN_CD
+			AND RT.TENPO_CD = TENPO.TENPO_CD
+			WHERE
+				TENPO.HOJIN_CD = ?
+			AND TENPO.TENPO_KB = '1'
+			AND TENPO.ZAIMU_END_DT >= ?
+			AND TENPO.DELETE_FG = '0'
+			AND NOT EXISTS
+				(SELECT
+					'1'
+				FROM
+					DT_TEN_SEISAN_STATE DTSS
+				WHERE
+					DTSS.COMP_CD = TENPO.HOJIN_CD
+				AND DTSS.KEIJO_DT = ?
+				AND DTSS.TENPO_CD = TENPO.TENPO_CD))
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 店別DPT売上集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TenbetsuDPTUriageSyukeiDao">
+		<SQL id="selectDPTSeisanUriage">
+			<![CDATA[
+				SELECT
+					WDSU.TENPO_CD WDSU_TENPO_CD,
+					WDSU.BUNRUI1_CD WDSU_BUNRUI1_CD,
+					WDSU.URIAGE_KOMI_VL,
+					WDSU.URIAGE_QT,
+					WDSU.BUNRUI1_KYAKU_QT,
+					RT.TENPO_CD RT_TENPO_CD,
+					RFTB.BUNRUI1_CD RFTB_BUNRUI1_CD
+				FROM
+					WK_DPT_SEISAN_URI WDSU
+				LEFT JOIN
+					R_TENPO RT
+				ON RT.HOJIN_CD = ?
+				AND WDSU.TENPO_CD = RT.TENPO_CD
+				AND RT.TENPO_KB = '1'
+				AND RT.KAITEN_DT <= ?
+				AND RT.ZAIMU_END_DT >= ?
+				AND RT.DELETE_FG = '0'
+				LEFT JOIN
+					(SELECT
+						RFTB.TENPO_CD,
+						RFTB.BUNRUI1_CD
+					FROM
+						R_FI_TENPO_BUNRUI1 RFTB
+					INNER JOIN
+						(SELECT
+							TENPO_CD,
+							BUNRUI1_CD,
+							MAX(YUKO_DT) YUKO_DT
+						FROM
+							R_FI_TENPO_BUNRUI1
+						WHERE
+							COMP_CD = ?
+						AND YUKO_DT <= ?
+						GROUP BY
+							TENPO_CD,
+							BUNRUI1_CD) SQ1
+					ON RFTB.TENPO_CD = SQ1.TENPO_CD
+					AND RFTB.BUNRUI1_CD = SQ1.BUNRUI1_CD
+					WHERE
+						RFTB.COMP_CD = ?
+					AND RFTB.YUKO_DT = SQ1.YUKO_DT
+					AND RFTB.TORIATSUKAI_KB = '1'
+					GROUP BY
+						RFTB.TENPO_CD,
+						RFTB.BUNRUI1_CD) RFTB
+				ON WDSU.TENPO_CD = RFTB.TENPO_CD
+				AND WDSU.BUNRUI1_CD = RFTB.BUNRUI1_CD
+				WHERE
+					WDSU.COMP_CD = ?
+				AND WDSU.KEIJO_DT = ?
+				AND WDSU.TIME = '9999'
+				ORDER BY
+					WDSU_TENPO_CD,WDSU_BUNRUI1_CD
+			]]>
+		</SQL>
+		<SQL id="createTeibetsuDPTUriage">
+			INSERT INTO
+				DT_TEN_DPT_URI
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				BUNRUI1_CD,
+				POS_VL,
+				URIAGE_KOMI_VL,
+				URIAGE_NUKI_VL,
+				SYOHIZEI_VL,
+				POS_QT,
+				URIAGE_QT,
+				POS_KYAKU_QT,
+				KYAKU_QT,
+				ERRER_FG,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			VALUES
+				(?, ?, ?, ?, ?, ?, '0', '0', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		</SQL>
+		<SQL id="createIfWkDptSeisanUriShiire">
+			INSERT INTO
+				IF_WK_DPT_SEISAN_URI_SHIIRE
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				BUNRUI1_CD,
+				URIAGE_KOMI_VL
+				)
+			VALUES
+				(?, ?, ?, ?, ?)
+		</SQL>
+		<SQL id = "selectTeibetsuDPTUriage">
+			SELECT
+				TENPO_CD,
+				BUNRUI1_CD
+			FROM
+				DT_TEN_DPT_URI
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			ORDER BY
+				TENPO_CD
+		</SQL>
+		<SQL id="updateSeisanJokyo">
+			UPDATE
+				DT_TEN_SEISAN_STATE
+			SET
+				BUNRUI1_SEISAN_STATE_FG = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+		</SQL>
+	</Dao>
+	<!-- 客数実績データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.KyakusuJisekiDataCreateDao">
+		<SQL id="deleteIFKyakusu">
+			DELETE
+				IF_WK_KYAKUSU_JISEKI
+			WHERE
+				COMP_CD = ?
+		</SQL>
+		<SQL id="selectStartDt">
+			SELECT
+				RC2.START_DT
+			FROM
+				R_CALENDAR RC2,
+				(
+				SELECT
+					RC.COMP_CD,
+					MIN(RC.KAIKEI_KI || RC.KAIKEI_MN) KAIKEIYM
+				FROM
+					R_CALENDAR RC
+				WHERE
+					RC.COMP_CD = ?
+				AND RC.KARIZIMESYORI_KB = '0'
+				GROUP
+					BY RC.COMP_CD) RC1
+			WHERE
+				RC2.COMP_CD = RC1.COMP_CD
+			AND RC2.KAIKEI_KI || RC2.KAIKEI_MN = RC1.KAIKEIYM
+		</SQL>
+		<SQL id="createIFKyakusu">
+			INSERT INTO
+				IF_WK_KYAKUSU_JISEKI
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				KYAKU_QT,
+				IF_INSERT_TS,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			(SELECT
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				SUM(BUNRUI1_KYAKU_QT),
+				?,
+				?,
+				?,
+				?,
+				?
+			FROM
+				WK_DPT_SEISAN_URI
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND BUNRUI1_CD = '9999'
+			GROUP BY
+				COMP_CD,KEIJO_DT,TENPO_CD,BUNRUI1_CD)
+		</SQL>
+		<SQL id="createIFKyakuJiseki">
+			<![CDATA[
+			INSERT INTO
+				IF_WK_KYAKUSU_JISEKI
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				KYAKU_QT,
+				IF_INSERT_TS,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			(SELECT
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				SUM(KYAKU_QT),
+				?,
+				?,
+				?,
+				?,
+				?
+			FROM
+				DT_TEN_DPT_URI
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT >= ?
+					AND KEIJO_DT <= ?
+			AND BUNRUI1_CD = '9999'
+			GROUP BY
+			COMP_CD,KEIJO_DT,TENPO_CD,BUNRUI1_CD)
+			]]>
+		</SQL>
+		<SQL id="selectIFKyakusu">
+			SELECT
+				KEIJO_DT,
+				RTRIM(TENPO_CD) AS TENPO_CD,
+				KYAKU_QT
+			FROM
+				IF_WK_KYAKUSU_JISEKI
+			WHERE
+				COMP_CD = ?
+		</SQL>
+	</Dao>
+	<!-- 店別精算データ集計処理  -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TenbetsuSeisanDataSyukeiDao">
+		<SQL id="tenpoMasterCheck">
+			<![CDATA[
+				SELECT
+					WKS.TENPO_CD, RT.TENPO_CD TENPO_CODE
+				FROM
+					WK_KAIKEI_SEISAN WKS
+				LEFT JOIN
+					R_TENPO RT
+				ON HOJIN_CD = ?
+				AND TENPO_KB = '1'
+				AND KAITEN_DT <= ?
+				AND ZAIMU_END_DT >= ?
+				AND DELETE_FG = '0'
+				AND RT.TENPO_CD = WKS.TENPO_CD
+				WHERE
+					WKS.COMP_CD = ?
+					AND WKS.DATA_SAKUSEI_DT = ?
+				GROUP BY
+					WKS.TENPO_CD, RT.TENPO_CD
+			]]>
+		</SQL>
+		<SQL id="selectSeisanKomokuCd">
+			<![CDATA[
+				SELECT
+					RSK2.SEISANHYO_KOMOKU_CD,
+					RSK2.POS_DATA_COLUMN_NA,
+					RUK2.SEISANHYO_KOMOKU_CD URIKAKE_SEISANHYO_KOMOKU_CD,
+					RUK2.URIKAKE_KOMOKU_CD,
+					RUK2.POS_DATA_COLUMN_NA URIKAKE_POS_DATA_COLUMN_NA,
+					RUK2.SYUSEI_FUKA_FG
+				FROM
+					(SELECT
+						RSK.SEISANHYO_KOMOKU_CD, RSK.POS_DATA_COLUMN_NA
+					FROM
+						R_SEISANHYO_KOMOKU RSK
+					INNER JOIN
+						(SELECT
+							COMP_CD,
+							SEISANHYO_KOMOKU_CD,
+							MAX(TEKIYO_START_DT) TEKIYO_START_DT
+						FROM
+							R_SEISANHYO_KOMOKU
+						WHERE
+							COMP_CD = ?
+						AND TEKIYO_START_DT <= ?
+						GROUP BY
+							COMP_CD, SEISANHYO_KOMOKU_CD) RSK1
+					ON RSK.COMP_CD = RSK1.COMP_CD
+					AND RSK.SEISANHYO_KOMOKU_CD = RSK1.SEISANHYO_KOMOKU_CD
+					AND RSK.TEKIYO_START_DT = RSK1.TEKIYO_START_DT
+					AND RSK.DELETE_FG = '0') RSK2
+				LEFT JOIN
+					(SELECT
+						RUK.SEISANHYO_KOMOKU_CD,
+						RUK.URIKAKE_KOMOKU_CD,
+						RUK.POS_DATA_COLUMN_NA,
+						RUK.SYUSEI_FUKA_FG
+					FROM
+						R_URIKAKE_KOMOKU RUK
+					INNER JOIN
+						(SELECT
+							COMP_CD,
+							SEISANHYO_KOMOKU_CD,
+							URIKAKE_KOMOKU_CD,
+							MAX(TEKIYO_START_DT) TEKIYO_START_DT
+						FROM
+							R_URIKAKE_KOMOKU
+						WHERE
+							COMP_CD = ?
+						AND TEKIYO_START_DT <= ?
+						GROUP BY
+							COMP_CD, SEISANHYO_KOMOKU_CD, URIKAKE_KOMOKU_CD) RUK1
+					ON RUK.COMP_CD = RUK1.COMP_CD
+					AND RUK.SEISANHYO_KOMOKU_CD = RUK1.SEISANHYO_KOMOKU_CD
+					AND RUK.URIKAKE_KOMOKU_CD = RUK1.URIKAKE_KOMOKU_CD
+					AND RUK.TEKIYO_START_DT = RUK1.TEKIYO_START_DT
+					AND RUK.DELETE_FG = '0') RUK2
+				ON RSK2.SEISANHYO_KOMOKU_CD =RUK2.SEISANHYO_KOMOKU_CD
+				ORDER BY
+					RSK2.SEISANHYO_KOMOKU_CD
+			]]>
+		</SQL>
+		<SQL id="uriageKinCheck">
+			<![CDATA[
+			SELECT
+				DTS.KEIJO_DT,
+				DTDU.TENPO_CD,
+				DTDU.POS_VL DPT_POS_VL,
+				DTS.POS_VL
+			FROM
+				DT_TEN_DPT_URI DTDU
+			INNER JOIN
+				DT_TEN_SEISAN_STATE DTSS
+			ON
+				DTSS.COMP_CD = DTDU.COMP_CD
+			AND DTSS.KEIJO_DT = DTDU.KEIJO_DT
+			AND DTSS.TENPO_CD = DTDU.TENPO_CD
+			AND DTSS.SEISAN_STATE_FG <> '2'
+			LEFT JOIN
+				(SELECT
+					KEIJO_DT,
+					TENPO_CD,
+					POS_VL,
+					SEISANHYO_KOMOKU_CD
+				FROM
+					DT_TEN_SEISAN
+				WHERE
+					COMP_CD = ?) DTS
+			ON
+				DTDU.TENPO_CD = DTS.TENPO_CD
+			AND DTDU.KEIJO_DT = DTS.KEIJO_DT
+			WHERE
+				DTDU.COMP_CD = ?
+			AND DTDU.DATA_SAKUSEI_DT = ?
+			AND DTDU.BUNRUI1_CD = '9999'
+			AND DTS.SEISANHYO_KOMOKU_CD = ?
+			ORDER BY
+				DTDU.TENPO_CD
+			]]>
+		</SQL>
+		<SQL id="updateTenSeisanState">
+			UPDATE
+				DT_TEN_SEISAN_STATE
+			SET
+				SEISAN_STATE_FG = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+		</SQL>
+	</Dao>
+	<!-- チェッカー別売上集計処理  -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.CheckerBetsuUriageSyukeiDao">
+		<SQL id="selectCheckerSeisan">
+			<![CDATA[
+				SELECT
+					WCSU.KEIJO_DT,
+					WCSU.TENPO_CD WCSU_TENPO_CD,
+					WCSU.CHECKER_CD,
+					WCSU.DAY_NET_VL,
+					RT.TENPO_CD RT_TENPO_CD
+				FROM
+					WK_CHECKER_SEISAN_URI WCSU
+				INNER JOIN
+					DT_TEN_SEISAN_STATE DTSS
+				ON DTSS.COMP_CD = WCSU.COMP_CD
+				AND DTSS.KEIJO_DT = WCSU.KEIJO_DT
+				AND DTSS.TENPO_CD = WCSU.TENPO_CD
+				AND DTSS.ISAN_SEISAN_STATE_FG <> '2'
+				LEFT JOIN
+					R_TENPO RT
+				ON RT.HOJIN_CD = ?
+				AND WCSU.TENPO_CD = RT.TENPO_CD
+				AND RT.TENPO_KB = '1'
+				AND RT.KAITEN_DT <= ?
+				AND RT.ZAIMU_END_DT >= ?
+				AND RT.DELETE_FG = '0'
+				WHERE
+					WCSU.COMP_CD = ?
+				AND WCSU.KEIJO_DT = ?
+				ORDER BY
+					WCSU.TENPO_CD
+			]]>
+		</SQL>
+		<SQL id="createTenIsan">
+			INSERT INTO
+				DT_TEN_ISAN_SEISAN
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				CHECKER_CD,
+				URIAGE_VL,
+				ISAN_PLUS_VL,
+				ISAN_MINUS_VL,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			VALUES
+				(?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)
+		</SQL>
+		<SQL id="selectTeibetsuDPTUriage">
+			<![CDATA[
+			SELECT
+				DTDU.KEIJO_DT,
+				DTDU.POS_VL DTDU_POS_VL,
+				DTIS.POS_VL DTIS_POS_VL,
+				DTDU.TENPO_CD
+			FROM
+				DT_TEN_DPT_URI DTDU
+			INNER JOIN
+				DT_TEN_SEISAN_STATE DTSS
+			ON DTSS.COMP_CD = DTDU.COMP_CD
+			AND DTSS.KEIJO_DT = DTDU.KEIJO_DT
+			AND DTSS.TENPO_CD = DTDU.TENPO_CD
+			AND DTSS.ISAN_SEISAN_STATE_FG <> '2'
+			LEFT JOIN
+				(SELECT
+					SUM(URIAGE_VL) POS_VL,
+					COMP_CD,
+					TENPO_CD,
+					KEIJO_DT
+				FROM
+					DT_TEN_ISAN_SEISAN
+				WHERE
+					COMP_CD = ?
+				AND KEIJO_DT = ?
+				GROUP BY
+					COMP_CD, TENPO_CD, KEIJO_DT) DTIS
+			ON DTDU.COMP_CD = DTIS.COMP_CD
+			AND DTDU.TENPO_CD = DTIS.TENPO_CD
+			AND DTDU.KEIJO_DT = DTIS.KEIJO_DT
+			WHERE
+				DTDU.COMP_CD = ?
+			AND DTDU.KEIJO_DT = ?
+			AND DTDU.BUNRUI1_CD = '9999'
+			ORDER BY
+				DTDU.TENPO_CD
+			]]>
+		</SQL>
+		<SQL id="updateTenSeisanState">
+			UPDATE
+				DT_TEN_SEISAN_STATE
+			SET
+				ISAN_SEISAN_STATE_FG = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+		</SQL>
+	</Dao>
+	<!-- 単品売上取込処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinUriageTorikomiDao">
+		<SQL id="syohinCdUpdate">
+			<![CDATA[
+				UPDATE
+					WK_NEW_TANPIN_SUMMARY
+				SET
+					SYOHIN_CD =
+						CASE WHEN SUBSTR(POS_CD, 1, 2) = '02'
+								THEN SUBSTR(POS_CD, 1, 12) || '0'
+							WHEN SUBSTR(POS_CD, 1, 2) = '23'
+								THEN SUBSTR(POS_CD, 1, 12) || '0'
+							ELSE POS_CD END
+				WHERE
+					SYOHIN_CD = '0000000000000'
+				AND
+					POS_CD <> '0000000000000'
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 単品売上データ集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinUriageDataSyukeiDao">
+		<SQL id="deleteTanpin">
+			DELETE
+				IF_DT_TANPIN_URI
+			WHERE COMP_CD = ?
+		</SQL>
+		<SQL id="createTanpin">
+			<![CDATA[
+				INSERT INTO
+					IF_DT_TANPIN_URI
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					SUM(URIAGE_QT) URIAGE_QT,
+					SUM(URIAGE_VL) URIAGE_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					WK_NEW_TANPIN_SUMMARY
+				WHERE
+					COMP_CD = ?
+				AND SYOHIN_CD <> '0000000000000'
+				AND URIAGE_KB = '1'
+				GROUP BY
+					COMP_CD,KEIJO_DT,TENPO_CD,SYOHIN_CD)
+			]]>
+		</SQL>
+		<SQL id="createTanpinMst">
+			<![CDATA[
+				INSERT INTO
+					IF_DT_TANPIN_URI_MST
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					SUM(URIAGE_QT) URIAGE_QT,
+					SUM(URIAGE_VL) URIAGE_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					WK_NEW_TANPIN_SUMMARY
+				WHERE
+					COMP_CD = ?
+				AND	BUNRUI1_CD <> '00'
+				AND URIAGE_KB = '1'
+				GROUP BY
+					COMP_CD,KEIJO_DT,TENPO_CD,SYOHIN_CD)
+			]]>
+		</SQL>
+		<SQL id="createTanpinTnp">
+			<![CDATA[
+				INSERT INTO
+					IF_DT_TANPIN_URI_TNP
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					SUM(URIAGE_QT) URIAGE_QT,
+					SUM(URIAGE_VL) URIAGE_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					WK_NEW_TANPIN_SUMMARY
+				WHERE
+					COMP_CD = ?
+				AND	BUNRUI1_CD <> '00'
+				AND URIAGE_KB = '1'
+				GROUP BY
+					COMP_CD,KEIJO_DT,TENPO_CD,SYOHIN_CD)
+			]]>
+		</SQL>
+		<SQL id="createSammarySir">
+			<![CDATA[
+				INSERT INTO
+					WK_NEW_TANPIN_SUMMARY_SIR
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					POS_CD,
+					SYOHIN_CD,
+					BAITANKA_VL,
+					DAIBUNRUI2_CD,
+					RECEIPT_NA,
+					DAIBUNRUI1_CD,
+					KIKAKU_CD,
+					SYOHIN_KB,
+					MIX_MATCH_CD,
+					MIX_MATCH_TYPE_TX,
+					BUNDLE_1_QT,
+					BUNDLE_1_VL,
+					BUNDLE_2_QT,
+					BUNDLE_2_VL,
+					MIX_MATCH_KANA_NA,
+					URIAGE_VL,
+					URIAGE_GENKA_VL,
+					URIAGE_QT,
+					NEBIKI_VL,
+					NEBIKI_QT,
+					KAKO_VL,
+					KAKO_QT,
+					HAIKI_VL,
+					HAIKI_QT,
+					HENPIN_VL,
+					HENPIN_QT,
+					KYAKU_QT,
+					BUNRUI1_CD,
+					BUNRUI2_CD,
+					BUNRUI5_CD,
+					END_HANBAI_TS,
+					MM_POINT_TAISYO_KB)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					POS_CD,
+					SYOHIN_CD,
+					BAITANKA_VL,
+					DAIBUNRUI2_CD,
+					RECEIPT_NA,
+					DAIBUNRUI1_CD,
+					KIKAKU_CD,
+					SYOHIN_KB,
+					MIX_MATCH_CD,
+					MIX_MATCH_TYPE_TX,
+					BUNDLE_1_QT,
+					BUNDLE_1_VL,
+					BUNDLE_2_QT,
+					BUNDLE_2_VL,
+					MIX_MATCH_KANA_NA,
+					URIAGE_VL,
+					URIAGE_GENKA_VL,
+					URIAGE_QT,
+					NEBIKI_VL,
+					NEBIKI_QT,
+					KAKO_VL,
+					KAKO_QT,
+					HAIKI_VL,
+					HAIKI_QT,
+					HENPIN_VL,
+					HENPIN_QT,
+					KYAKU_QT,
+					BUNRUI1_CD,
+					BUNRUI2_CD,
+					BUNRUI5_CD,
+					END_HANBAI_TS,
+					MM_POINT_TAISYO_KB
+				FROM
+					WK_NEW_TANPIN_SUMMARY
+				WHERE
+					COMP_CD = ?
+					AND URIAGE_KB = '1')
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 単品売上IF用データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinUriageIfDataCreateDao">
+		<SQL id="deleteTanpin">
+			<![CDATA[
+				DELETE
+					IF_DT_TANPIN_URI
+				WHERE COMP_CD = ?
+			]]>
+		</SQL>
+		<SQL id="createTanpin">
+			<![CDATA[
+				INSERT INTO
+					IF_DT_TANPIN_URI
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				FROM
+					IF_DT_TANPIN_URI_MST
+				WHERE
+					COMP_CD = ?
+				)
+			]]>
+		</SQL>
+		<SQL id="deleteTanpinMst">
+			<![CDATA[
+				DELETE
+					IF_DT_TANPIN_URI_MST
+				WHERE COMP_CD = ?
+			]]>
+		</SQL>
+		<SQL id="deleteTanpinTnp">
+			<![CDATA[
+				DELETE
+					IF_DT_TANPIN_URI_TNP
+				WHERE COMP_CD = ?
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 関連会社売上集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.KanrenKaisyaUriageSyukeiDao">
+		<SQL id="deleteWKKancomp">
+			TRUNCATE TABLE
+				WK_KANCOMP_DPT_URI_RUISEKI
+		</SQL>
+	</Dao>
+	<!-- DPT売上税計算処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DPTUriageZeiKeisanDao">
+		<SQL id="selectTeibetsuDPTUriage">
+			<![CDATA[
+				SELECT
+					SQ.KEIJO_DT,
+					SQ.TENPO_CD,
+					SQ.BUNRUI1_CD,
+					SQ.URIAGE_KOMI_VL,
+					RDS2.ZEI_KB,
+					RDS2.TAX_RT
+				FROM
+					(SELECT
+						DTDU.COMP_CD,
+						DTDU.KEIJO_DT,
+						DTDU.TENPO_CD,
+						DTDU.BUNRUI1_CD,
+						DTDU.URIAGE_KOMI_VL,
+						MAX(RDS1.YUKO_DT) YUKO_DT
+					FROM
+						DT_TEN_DPT_URI DTDU
+					LEFT JOIN
+						R_DAIHYO_SYOHIN RDS1
+					ON RDS1.COMP_CD = DTDU.COMP_CD
+					AND RDS1.BUNRUI1_CD = DTDU.BUNRUI1_CD
+					AND RDS1.YUKO_DT <= DTDU.KEIJO_DT
+					WHERE
+						DTDU.COMP_CD = ?
+					AND DTDU.KEIJO_DT >=
+						(SELECT
+							MIN(START_DT)
+						FROM
+							R_CALENDAR
+						WHERE
+							COMP_CD = ?
+						AND KARIZIMESYORI_KB <= '1')
+					AND DTDU.BUNRUI1_CD NOT IN ('9999')
+					GROUP BY
+						DTDU.COMP_CD,
+						DTDU.KEIJO_DT,
+						DTDU.TENPO_CD,
+						DTDU.BUNRUI1_CD,
+						DTDU.URIAGE_KOMI_VL) SQ
+				LEFT JOIN
+					R_DAIHYO_SYOHIN RDS2
+				ON RDS2.COMP_CD = SQ.COMP_CD
+				AND RDS2.BUNRUI1_CD = SQ.BUNRUI1_CD
+				AND RDS2.YUKO_DT = SQ.YUKO_DT
+			]]>
+		</SQL>
+		<SQL id="updateTeibetsuDPTUriage">
+			UPDATE
+				DT_TEN_DPT_URI
+			SET
+				URIAGE_NUKI_VL = ?,
+				SYOHIZEI_VL = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+			AND BUNRUI1_CD = ?
+		</SQL>
+		<SQL id="selectTeibetsuDPTUriageTyosei">
+			<![CDATA[
+				SELECT
+					SQ2.SYOHIZEI_VL,
+					SQ2.SEISAN_VL,
+					SQ2.TENPO_CD,
+					SQ2.KEIJO_DT,
+					SQ2.BUNRUI1_CD
+				FROM
+					(SELECT
+						SQ1.SYOHIZEI_VL,
+						DTS.SEISAN_VL,
+						SQ1.TENPO_CD,
+						SQ1.KEIJO_DT,
+						(SELECT
+							DTDU.BUNRUI1_CD
+						FROM
+							DT_TEN_DPT_URI DTDU
+						WHERE
+							DTDU.COMP_CD = ?
+						AND DTDU.KEIJO_DT = SQ1.KEIJO_DT
+						AND DTDU.TENPO_CD = SQ1.TENPO_CD
+						AND DTDU.BUNRUI1_CD NOT IN ('9999', ?)
+						AND DTDU.URIAGE_KOMI_VL = (SELECT
+														MAX(TMP_DTDU.URIAGE_KOMI_VL)
+													FROM
+														DT_TEN_DPT_URI TMP_DTDU
+													WHERE
+														TMP_DTDU.COMP_CD = ?
+													AND TMP_DTDU.KEIJO_DT = SQ1.KEIJO_DT
+													AND TMP_DTDU.TENPO_CD = SQ1.TENPO_CD
+													AND TMP_DTDU.BUNRUI1_CD NOT IN ('9999', ?)
+													)
+						AND ROWNUM = 1
+						) BUNRUI1_CD,
+						(SELECT
+							DTDU.URIAGE_KOMI_VL
+						FROM
+							DT_TEN_DPT_URI DTDU
+						WHERE
+							DTDU.COMP_CD = ?
+						AND DTDU.KEIJO_DT = SQ1.KEIJO_DT
+						AND DTDU.TENPO_CD = SQ1.TENPO_CD
+						AND DTDU.BUNRUI1_CD = '9999'
+						) SUM_URIAGE_KOMI_VL
+					FROM
+						DT_TEN_SEISAN DTS
+					LEFT JOIN
+						(SELECT
+							SUM(SYOHIZEI_VL) SYOHIZEI_VL,
+							COMP_CD,
+							TENPO_CD,
+							KEIJO_DT
+						FROM
+							DT_TEN_DPT_URI
+						WHERE
+							COMP_CD = ?
+						AND KEIJO_DT >=
+							(SELECT
+								MIN(START_DT)
+							FROM
+								R_CALENDAR
+							WHERE
+								COMP_CD = ?
+							AND KARIZIMESYORI_KB <= '1')
+						AND BUNRUI1_CD NOT IN ('9999', ?)
+						GROUP BY
+							COMP_CD, TENPO_CD, KEIJO_DT
+						) SQ1
+					ON DTS.COMP_CD = SQ1.COMP_CD
+					AND DTS.TENPO_CD = SQ1.TENPO_CD
+					AND DTS.KEIJO_DT = SQ1.KEIJO_DT
+					WHERE
+						DTS.COMP_CD = ?
+						AND DTS.SEISANHYO_KOMOKU_CD = ?
+						AND DTS.SEISAN_VL <> SQ1.SYOHIZEI_VL
+					) SQ2
+				LEFT JOIN
+					DT_TEN_SEISAN DTS
+				ON
+					DTS.COMP_CD = ?
+				AND DTS.TENPO_CD = SQ2.TENPO_CD
+				AND DTS.KEIJO_DT = SQ2.KEIJO_DT
+				AND DTS.SEISANHYO_KOMOKU_CD = ?
+				WHERE
+					NVL(SQ2.SUM_URIAGE_KOMI_VL, 0) = NVL(DTS.SEISAN_VL, 0)
+			]]>
+		</SQL>
+		<SQL id="updateTeibetsuDPTUriageTyosei">
+			UPDATE
+				DT_TEN_DPT_URI
+			SET
+				URIAGE_NUKI_VL = URIAGE_NUKI_VL - ?,
+				SYOHIZEI_VL = SYOHIZEI_VL + ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+			AND BUNRUI1_CD = ?
+		</SQL>
+	</Dao>
+	<!-- DPT売上累積データ抽出処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DPTUriageRuisekiDataSelectDao">
+		<SQL id="deleteDPTRuiseki">
+			DELETE
+				WK_DPT_URI_RUISEKI
+			WHERE
+				COMP_CD = ?
+		</SQL>
+		<SQL id="createDPTRuiseki">
+			<![CDATA[
+				INSERT INTO
+					WK_DPT_URI_RUISEKI
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					BUNRUI1_CD,
+					URIAGE_VL,
+					URIAGE_QT,
+					BUNRUI1_KYAKU_QT,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS)
+				(SELECT
+					?,
+					KEIJO_DT,
+					TENPO_CD,
+					BUNRUI1_CD,
+					URIAGE_NUKI_VL,
+					URIAGE_QT,
+					KYAKU_QT,
+					?,
+					?,
+					?,
+					?
+				FROM
+					DT_TEN_DPT_URI
+				WHERE
+					COMP_CD = ?
+				AND KEIJO_DT >=
+					(SELECT
+						RC.START_DT
+					FROM
+						R_CALENDAR RC
+					INNER JOIN
+						(SELECT
+							COMP_CD,
+							MIN(KAIKEI_KI || KAIKEI_MN) KAIKEI_MN
+						FROM
+							R_CALENDAR
+						WHERE
+							COMP_CD = ?
+						AND HONZIMESYORI_KB <= '1'
+						GROUP BY
+							COMP_CD
+						) TMP_RC
+					ON
+						RC.COMP_CD = TMP_RC.COMP_CD
+					AND RC.KAIKEI_KI || RC.KAIKEI_MN = TMP_RC.KAIKEI_MN)
+				AND KEIJO_DT <= ?
+				AND BUNRUI1_CD <> ?
+				AND URIAGE_KB = '1')
+			]]>
+		</SQL>
+	</Dao>
+	<!-- DPT別売上累積データ集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DPTBetsuUriageRuisekiDataSyukeiDao">
+		<SQL id="selectDPTUriRuiseki">
+			SELECT
+				WDUR.COMP_CD,
+				WDUR.KEIJO_DT,
+				WDUR.TENPO_CD,
+				WDUR.BUNRUI1_CD,
+				WDUR.URIAGE_VL,
+				WDUR.URIAGE_QT,
+				WDUR.BUNRUI1_KYAKU_QT
+			FROM
+				WK_DPT_URI_RUISEKI WDUR
+			UNION
+			SELECT
+				WKDUR.COMP_CD,
+				WKDUR.KEIJO_DT,
+				WKDUR.TENPO_CD,
+				WKDUR.BUNRUI1_CD,
+				WKDUR.URIAGE_VL,
+				WKDUR.URIAGE_QT,
+				WKDUR.BUNRUI1_KYAKU_QT
+			FROM
+				WK_KANCOMP_DPT_URI_RUISEKI WKDUR
+		</SQL>
+	</Dao>
+	<!-- テナント精算データ集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TenantSeisanDataSyukeiDao">
+		<SQL id="selectTenantSeisan">
+			SELECT
+				DTTS.COMP_CD,
+				DTTS.KEIJO_DT,
+				DTTS.TENANT_CD,
+				DTTS.TENPO_CD,
+				DTTS.ZEN_NYUKIN_URIAGE_KOMI_VL,
+				DTTS.NYUKIN_URIAGE_KOMI_VL,
+				DTTS.ZEN_HOKOKU_URIAGE_KOMI_VL,
+				DTTS.HOKOKU_URIAGE_KOMI_VL,
+				DTTS.ZEN_HOKOKU_URIAGE_ZEIGAKU_VL,
+				DTTS.HOKOKU_URIAGE_ZEIGAKU_VL
+			FROM
+				DT_TEN_TENANT_SEISAN DTTS
+			LEFT JOIN
+				DT_TEN_SEISAN_STATE DTSS
+			ON DTTS.COMP_CD = DTSS.COMP_CD
+			AND DTTS.KEIJO_DT = DTSS.KEIJO_DT
+			AND DTTS.TENPO_CD = DTSS.TENPO_CD
+			WHERE
+				DTTS.COMP_CD = ?
+			AND DTTS.KEIJO_DT >=
+				(SELECT
+					MIN(START_DT) START_DT
+				FROM
+					R_CALENDAR
+				WHERE
+					COMP_CD = ?
+				AND (HONZIMESYORI_KB = '0' OR HONZIMESYORI_KB = '1'))
+			AND DTSS.TENANT_SEISASN_STATE_FG = '2'
+			ORDER BY
+				DTTS.COMP_CD
+		</SQL>
+		<SQL id="selectWKTenantSeisan">
+			SELECT
+				MAX(SEQ_RB) SEQ_RB
+			FROM
+				IF_WK_TENANTO_SEISAN
+			WHERE
+				COMP_CD = ?
+			AND HASSEI_DT = ?
+		</SQL>
+		<SQL id="createWKTenantSeisan">
+			INSERT INTO
+				IF_WK_TENANTO_SEISAN
+				(
+				COMP_CD,
+				HASSEI_DT,
+				SEQ_RB,
+				KEIJO_DT,
+				TENPO_CD,
+				TENANT_CD,
+				NYUKIN_URIAGE_KOMI_VL,
+				HOKOKU_URIAGE_KOMI_VL,
+				HOKOKU_URIAGE_ZEIGAKU_VL,
+				IF_INSERT_TS,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			VALUES
+				(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		</SQL>
+		<SQL id="updateTenantSeisan">
+			UPDATE
+				DT_TEN_TENANT_SEISAN
+			SET
+				ZEN_NYUKIN_URIAGE_KOMI_VL = ?,
+				ZEN_HOKOKU_URIAGE_KOMI_VL = ?,
+				ZEN_HOKOKU_URIAGE_ZEIGAKU_VL = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+			AND TENANT_CD = ?
+		</SQL>
+	</Dao>
+	<!-- オフラインDPT売上集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OfflineDPTUriageSyukeiDao">
+		<SQL id="selectWkOfflineDptSeisanUri">
+			<![CDATA[
+				SELECT
+					WODSU.KEIJO_DT,
+					WODSU.TENPO_CD,
+					WODSU.BUNRUI1_CD,
+					DTDU.TENPO_CD DTDU_TENPO_CD,
+					SUM(WODSU.URIAGE_KOMI_VL) URIAGE_KOMI_VL,
+					SUM(WODSU.URIAGE_QT) URIAGE_QT,
+					SUM(WODSU.BUNRUI1_KYAKU_QT) BUNRUI1_KYAKU_QT
+				FROM
+					WK_OFF_DPT_SEISAN_URI_SAI WODSU
+				INNER JOIN
+					(
+					SELECT
+						KEIJO_DT,
+						TENPO_CD
+					FROM
+						DT_TEN_SEISAN_STATE
+					WHERE
+						COMP_CD = ?
+					AND SEISAN_STATE_FG IN ('0', '1', '9')
+					AND (BUNRUI1_SEISAN_STATE_FG = '0' OR
+						BUNRUI1_SEISAN_STATE_FG = '1' OR
+						BUNRUI1_SEISAN_STATE_FG = '9')) DTSS
+				ON WODSU.KEIJO_DT = DTSS.KEIJO_DT
+				AND WODSU.TENPO_CD = DTSS.TENPO_CD
+				LEFT JOIN
+					DT_TEN_DPT_URI DTDU
+				ON DTDU.COMP_CD = WODSU.COMP_CD
+				AND DTDU.KEIJO_DT = WODSU.KEIJO_DT
+				AND DTDU.TENPO_CD = WODSU.TENPO_CD
+				AND DTDU.BUNRUI1_CD = WODSU.BUNRUI1_CD
+				WHERE
+					WODSU.COMP_CD = ?
+				AND WODSU.BUNRUI1_CD <> ?
+				GROUP BY
+					WODSU.KEIJO_DT,
+					WODSU.TENPO_CD,
+					WODSU.BUNRUI1_CD,
+					DTDU.TENPO_CD
+				ORDER BY
+					WODSU.KEIJO_DT,
+					WODSU.TENPO_CD,
+					WODSU.BUNRUI1_CD
+			]]>
+		</SQL>
+		<SQL id="selectRFiTenpoBunrui1">
+			<![CDATA[
+			SELECT
+				RFTB.TENPO_CD,
+				RFTB.BUNRUI1_CD
+			FROM
+				R_FI_TENPO_BUNRUI1 RFTB
+			WHERE
+				RFTB.COMP_CD = ?
+			AND RFTB.TORIATSUKAI_KB = '1'
+			AND RFTB.TENPO_CD = ?
+			AND RFTB.BUNRUI1_CD = ?
+			AND RFTB.YUKO_DT =
+							(
+							SELECT
+								MAX(YUKO_DT)
+							FROM
+								R_FI_TENPO_BUNRUI1
+							WHERE
+								COMP_CD = ?
+							AND YUKO_DT <= ?
+							AND TENPO_CD = ?
+							AND BUNRUI1_CD = ?)
+			]]>
+		</SQL>
+		<SQL id="updateDtTenDptUri">
+			UPDATE
+				DT_TEN_DPT_URI DTDU
+			SET
+				DTDU.POS_VL         = DTDU.POS_VL + ?,
+				DTDU.URIAGE_KOMI_VL = DTDU.URIAGE_KOMI_VL + ?,
+				DTDU.URIAGE_NUKI_VL = 0,
+				DTDU.SYOHIZEI_VL    = 0,
+				DTDU.POS_QT         = DTDU.POS_QT + ?,
+				DTDU.URIAGE_QT      = DTDU.URIAGE_QT + ?,
+				DTDU.POS_KYAKU_QT   = DTDU.POS_KYAKU_QT + ?,
+				DTDU.KYAKU_QT       = DTDU.KYAKU_QT + ?,
+				DTDU.ERRER_FG       = '0',
+				DTDU.UPDATE_USER_ID = ?,
+				DTDU.UPDATE_TS      = ?
+			WHERE
+				DTDU.COMP_CD = ?
+			AND DTDU.KEIJO_DT = ?
+			AND DTDU.TENPO_CD = ?
+			AND DTDU.BUNRUI1_CD = ?
+		</SQL>
+		<SQL id="createDtTenDptUri">
+			INSERT INTO
+				DT_TEN_DPT_URI
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				BUNRUI1_CD,
+				POS_VL,
+				URIAGE_KOMI_VL,
+				URIAGE_NUKI_VL,
+				SYOHIZEI_VL,
+				POS_QT,
+				URIAGE_QT,
+				POS_KYAKU_QT,
+				KYAKU_QT,
+				ERRER_FG,
+				INSERT_USER_ID,
+				INSERT_TS,
+				UPDATE_USER_ID,
+				UPDATE_TS)
+			VALUES
+				(?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, '0', ?, ?, ?, ?)
+		</SQL>
+		<SQL id="checkErrorDpt">
+			SELECT
+				COUNT(DTDU.BUNRUI1_CD) CNT
+			FROM
+				DT_TEN_DPT_URI DTDU
+			WHERE
+				DTDU.COMP_CD = ?
+			AND DTDU.KEIJO_DT = ?
+			AND DTDU.TENPO_CD = ?
+			AND DTDU.BUNRUI1_CD = ?
+		</SQL>
+		<SQL id="updateWkDptSeisanUriShiire">
+			UPDATE
+				IF_WK_DPT_SEISAN_URI_SHIIRE
+			SET
+				URIAGE_KOMI_VL = URIAGE_KOMI_VL + ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+			AND BUNRUI1_CD = ?
+		</SQL>
+		<SQL id="createWkDptSeisanUriShiire">
+			INSERT INTO
+				IF_WK_DPT_SEISAN_URI_SHIIRE
+				(
+				COMP_CD,
+				KEIJO_DT,
+				TENPO_CD,
+				BUNRUI1_CD,
+				URIAGE_KOMI_VL
+				)
+			VALUES
+				(?, ?, ?, ?, ?)
+		</SQL>
+		<SQL id="updateDtTenSeisanState">
+			UPDATE
+				DT_TEN_SEISAN_STATE DTSS
+			SET
+				DTSS.BUNRUI1_SEISAN_STATE_FG = ?,
+				DTSS.UPDATE_USER_ID = ?,
+				DTSS.UPDATE_TS = ?
+			WHERE
+				DTSS.COMP_CD = ?
+			AND DTSS.KEIJO_DT = ?
+			AND DTSS.TENPO_CD = ?
+		</SQL>
+		<SQL id="selectWkOfflineDptSeisanUriSum">
+			<![CDATA[
+				SELECT
+					WODSU.KEIJO_DT,
+					WODSU.TENPO_CD,
+					DTDU.TENPO_CD DTDU_TENPO_CD,
+					SUM(WODSU.URIAGE_KOMI_VL) URIAGE_KOMI_VL,
+					SUM(WODSU.URIAGE_QT) URIAGE_QT,
+					SUM(WODSU.BUNRUI1_KYAKU_QT) BUNRUI1_KYAKU_QT
+				FROM
+					WK_OFF_DPT_SEISAN_URI_SAI WODSU
+				INNER JOIN
+					(
+					SELECT
+						KEIJO_DT,
+						TENPO_CD
+					FROM
+						DT_TEN_SEISAN_STATE
+					WHERE
+						COMP_CD = ?
+					AND SEISAN_STATE_FG IN ('0', '1', '9')
+					AND (BUNRUI1_SEISAN_STATE_FG = '0' OR
+						BUNRUI1_SEISAN_STATE_FG = '1' OR
+						BUNRUI1_SEISAN_STATE_FG = '9')) DTSS
+				ON WODSU.KEIJO_DT = DTSS.KEIJO_DT
+				AND WODSU.TENPO_CD = DTSS.TENPO_CD
+				LEFT JOIN
+					DT_TEN_DPT_URI DTDU
+				ON DTDU.COMP_CD = WODSU.COMP_CD
+				AND DTDU.KEIJO_DT = WODSU.KEIJO_DT
+				AND DTDU.TENPO_CD = WODSU.TENPO_CD
+				AND DTDU.BUNRUI1_CD = ?
+				WHERE
+					WODSU.COMP_CD = ?
+				AND WODSU.KEIJO_DT = ?
+				AND WODSU.TENPO_CD = ?
+				AND WODSU.BUNRUI1_CD <> ?
+				GROUP BY
+					WODSU.KEIJO_DT,
+					WODSU.TENPO_CD,
+					DTDU.TENPO_CD
+			]]>
+		</SQL>
+	</Dao>
+
+	<!-- オフラインDPT精算売上差異データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OfflineDPTSeisanUriageSaiDataCreateDao">
+		<SQL id="deleteWkOffDptSeiUriSai">
+			DELETE FROM WK_OFF_DPT_SEISAN_URI_SAI
+			WHERE COMP_CD = ?
+		</SQL>
+		<SQL id="selectWkOffDptSeiUri">
+			<![CDATA[
+			SELECT
+				COMP_CD
+				,KEIJO_DT
+				,TENPO_CD
+				,ENTRY_DT
+				,POS_NB
+				,JIGYOBU_CD
+				,GYOSYU_CD
+				,BUNRUI1_CD
+				,URIAGE_KOMI_VL
+				,URIAGE_QT
+				,NEBIKI_VL
+				,NEBIKI_QT
+				,HENPIN_VL
+				,HENPIN_QT
+				,BUNRUI1_KYAKU_QT
+			FROM WK_OFF_DPT_SEISAN_URI WK
+			WHERE
+				WK.COMP_CD = ?
+			AND	WK.ENTRY_DT = (
+								SELECT MAX(SUB1.ENTRY_DT)
+								FROM WK_OFF_DPT_SEISAN_URI SUB1
+								WHERE
+									WK.COMP_CD = SUB1.COMP_CD
+								AND	WK.KEIJO_DT = SUB1.KEIJO_DT
+								AND	WK.TENPO_CD = SUB1.TENPO_CD
+								AND	WK.POS_NB = SUB1.POS_NB
+								AND	WK.BUNRUI1_CD = SUB1.BUNRUI1_CD
+								)
+			ORDER BY
+				COMP_CD
+				,KEIJO_DT
+				,TENPO_CD
+				,POS_NB
+				,BUNRUI1_CD
+				,ENTRY_DT
+				,JIGYOBU_CD
+				,GYOSYU_CD
+			]]>
+		</SQL>
+		<SQL id="selectWkOffDptSeiUriRui">
+			<![CDATA[
+			SELECT
+				URIAGE_KOMI_VL
+				,URIAGE_QT
+				,NEBIKI_VL
+				,NEBIKI_QT
+				,HENPIN_VL
+				,HENPIN_QT
+				,BUNRUI1_KYAKU_QT
+			FROM WK_OFF_DPT_SEISAN_URI_RUI
+			WHERE
+				COMP_CD = ?
+			AND	KEIJO_DT = ?
+			AND	TENPO_CD = ?
+			AND	POS_NB = ?
+			AND	BUNRUI1_CD = ?
+			]]>
+		</SQL>
+		<SQL id="insertWkOffDptSeiUriRui">
+			INSERT INTO WK_OFF_DPT_SEISAN_URI_RUI
+				(
+				COMP_CD
+				,KEIJO_DT
+				,TENPO_CD
+				,ENTRY_DT
+				,POS_NB
+				,JIGYOBU_CD
+				,GYOSYU_CD
+				,BUNRUI1_CD
+				,URIAGE_KOMI_VL
+				,URIAGE_QT
+				,NEBIKI_VL
+				,NEBIKI_QT
+				,HENPIN_VL
+				,HENPIN_QT
+				,BUNRUI1_KYAKU_QT
+				)
+			VALUES
+				(
+				?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				)
+		</SQL>
+		<SQL id="updateWkOffDptSeiUriRui">
+			UPDATE
+				WK_OFF_DPT_SEISAN_URI_RUI
+			SET
+				ENTRY_DT = ?
+				,JIGYOBU_CD = ?
+				,GYOSYU_CD = ?
+				,URIAGE_KOMI_VL = ?
+				,URIAGE_QT = ?
+				,NEBIKI_VL = ?
+				,NEBIKI_QT = ?
+				,HENPIN_VL = ?
+				,HENPIN_QT = ?
+				,BUNRUI1_KYAKU_QT = ?
+			WHERE
+				COMP_CD = ?
+			AND	KEIJO_DT = ?
+			AND	TENPO_CD = ?
+			AND	POS_NB = ?
+			AND	BUNRUI1_CD = ?
+		</SQL>
+		<SQL id="insertWkOffDptSeiUriSai">
+			INSERT INTO WK_OFF_DPT_SEISAN_URI_SAI
+				(
+				COMP_CD
+				,KEIJO_DT
+				,TENPO_CD
+				,ENTRY_DT
+				,POS_NB
+				,JIGYOBU_CD
+				,GYOSYU_CD
+				,BUNRUI1_CD
+				,URIAGE_KOMI_VL
+				,URIAGE_QT
+				,NEBIKI_VL
+				,NEBIKI_QT
+				,HENPIN_VL
+				,HENPIN_QT
+				,BUNRUI1_KYAKU_QT
+				)
+			VALUES
+				(
+				?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				)
+		</SQL>
+	</Dao>
+
+	<!-- オフライン会計精算売上データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OfflineKaikeiSeisanUriageDataCreateDao">
+		<SQL id="selectWKOffLine">
+			SELECT
+				WOKS.KEIJO_DT
+			FROM
+				WK_OFF_KAIKEI_SEISAN_SAI WOKS
+			INNER JOIN
+				(SELECT
+					KEIJO_DT,
+					TENPO_CD
+				FROM
+					DT_TEN_SEISAN_STATE
+				WHERE
+					COMP_CD = ?
+				AND (SEISAN_STATE_FG = '0'
+						OR SEISAN_STATE_FG = '1'
+					OR SEISAN_STATE_FG = '9')) SQ1
+			ON SQ1.KEIJO_DT = WOKS.KEIJO_DT
+			AND SQ1.TENPO_CD = WOKS.TENPO_CD
+			WHERE
+				WOKS.COMP_CD = ?
+			GROUP BY
+				WOKS.KEIJO_DT
+			ORDER BY
+				WOKS.KEIJO_DT
+		</SQL>
+		<SQL id="selectSeisanKomokuCd">
+			<![CDATA[
+				SELECT
+					RSK2.SEISANHYO_KOMOKU_CD,
+					RSK2.POS_DATA_COLUMN_NA,
+					RUK2.SEISANHYO_KOMOKU_CD URIKAKE_SEISANHYO_KOMOKU_CD,
+					RUK2.URIKAKE_KOMOKU_CD,
+					RUK2.POS_DATA_COLUMN_NA URIKAKE_POS_DATA_COLUMN_NA
+				FROM
+					(SELECT
+						RSK.SEISANHYO_KOMOKU_CD, RSK.POS_DATA_COLUMN_NA
+					FROM
+						R_SEISANHYO_KOMOKU RSK
+					INNER JOIN
+						(SELECT
+							SEISANHYO_KOMOKU_CD,
+							MAX(TEKIYO_START_DT) TEKIYO_START_DT
+						FROM
+							R_SEISANHYO_KOMOKU
+						WHERE
+							COMP_CD = ?
+						AND TEKIYO_START_DT <= ?
+						GROUP BY
+							SEISANHYO_KOMOKU_CD) RSK1
+					ON RSK.SEISANHYO_KOMOKU_CD = RSK1.SEISANHYO_KOMOKU_CD
+					AND RSK.TEKIYO_START_DT = RSK1.TEKIYO_START_DT
+					WHERE
+						RSK.COMP_CD = ?) RSK2
+				LEFT JOIN
+					(SELECT
+						RUK.SEISANHYO_KOMOKU_CD,
+						RUK.URIKAKE_KOMOKU_CD,
+						RUK.POS_DATA_COLUMN_NA
+					FROM
+						R_URIKAKE_KOMOKU RUK
+					INNER JOIN
+						(SELECT
+							SEISANHYO_KOMOKU_CD,
+							URIKAKE_KOMOKU_CD,
+							MAX(TEKIYO_START_DT) TEKIYO_START_DT
+						FROM
+							R_URIKAKE_KOMOKU
+						WHERE
+							COMP_CD = ?
+						AND TEKIYO_START_DT <= ?
+						GROUP BY
+							SEISANHYO_KOMOKU_CD, URIKAKE_KOMOKU_CD) RUK1
+					ON RUK.SEISANHYO_KOMOKU_CD = RUK1.SEISANHYO_KOMOKU_CD
+					AND RUK.URIKAKE_KOMOKU_CD = RUK1.URIKAKE_KOMOKU_CD
+					AND RUK.TEKIYO_START_DT = RUK1.TEKIYO_START_DT
+					WHERE
+						RUK.COMP_CD = ?) RUK2
+				ON RSK2.SEISANHYO_KOMOKU_CD =RUK2.SEISANHYO_KOMOKU_CD
+				WHERE TRIM(RSK2.POS_DATA_COLUMN_NA) IS NOT NULL
+				OR TRIM(RUK2.POS_DATA_COLUMN_NA) IS NOT NULL
+				ORDER BY
+					RSK2.SEISANHYO_KOMOKU_CD
+			]]>
+		</SQL>
+		<SQL id="uriageKinCheck">
+			SELECT
+				DTS.KEIJO_DT,
+				DTDU.TENPO_CD,
+				DTDU.POS_VL DPT_POS_VL,
+				DTS.POS_VL
+			FROM
+				DT_TEN_DPT_URI DTDU
+			LEFT JOIN
+				(SELECT
+					KEIJO_DT,
+					TENPO_CD,
+					POS_VL,
+					SEISANHYO_KOMOKU_CD
+				FROM
+					DT_TEN_SEISAN
+				WHERE
+					COMP_CD = ?
+				AND KEIJO_DT = ?) DTS
+			ON DTDU.TENPO_CD = DTS.TENPO_CD
+			WHERE
+				DTDU.COMP_CD = ?
+			AND DTDU.KEIJO_DT = ?
+			AND DTDU.BUNRUI1_CD = '9999'
+			AND DTS.SEISANHYO_KOMOKU_CD = ?
+			ORDER BY
+				DTDU.TENPO_CD
+		</SQL>
+		<SQL id="updateTenSeisanState">
+			UPDATE
+				DT_TEN_SEISAN_STATE
+			SET
+				BUNRUI1_SEISAN_STATE_FG = ?,
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND KEIJO_DT = ?
+			AND TENPO_CD = ?
+		</SQL>
+	</Dao>
+
+	<!-- オフライン会計精算売上差異データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OfflineKaikeiSeisanUriageSaiDataCreateDao">
+		<SQL id="deleteWkOffKaiSeiUriSai">
+			DELETE FROM WK_OFF_KAIKEI_SEISAN_SAI
+			WHERE COMP_CD = ?
+		</SQL>
+		<SQL id="selectWkOffKaiSeiUri">
+			<![CDATA[
+			SELECT
+				COMP_CD
+				,TENPO_CD
+				,ENTRY_DT
+				,KEIJO_DT
+				,POS_NB
+				,DAY_NET_VL
+				,KEI_1_VL
+				,KEI_1_COUNT_QT
+				,KEI_2_VL
+				,KEI_2_COUNT_QT
+				,KEI_3_VL
+				,KEI_3_COUNT_QT
+				,KEI_4_VL
+				,KEI_4_COUNT_QT
+				,KEI_5_VL
+				,KEI_5_COUNT_QT
+				,KEI_6_VL
+				,KEI_6_COUNT_QT
+				,KEI_7_VL
+				,KEI_7_COUNT_QT
+				,KEI_8_VL
+				,KEI_8_COUNT_QT
+				,KEI_9_VL
+				,KEI_9_COUNT_QT
+				,KEI_10_VL
+				,KEI_10_COUNT_QT
+				,SOTOZEI_TAISYO_VL
+				,UCHIZEI_TAISYO_VL
+				,HIKAZEI_TAISYO_VL
+				,SOTOZEI_VL
+				,UCHIZEI_VL
+				,TENSU_QT
+				,KYAKU_QT
+			FROM WK_OFF_KAIKEI_SEISAN WK
+			WHERE
+				WK.COMP_CD = ?
+			AND	WK.ENTRY_DT = (
+								SELECT MAX(SUB1.ENTRY_DT)
+								FROM WK_OFF_KAIKEI_SEISAN SUB1
+								WHERE
+									WK.COMP_CD = SUB1.COMP_CD
+								AND	WK.TENPO_CD = SUB1.TENPO_CD
+								AND	WK.KEIJO_DT = SUB1.KEIJO_DT
+								AND	WK.POS_NB = SUB1.POS_NB
+								)
+			]]>
+		</SQL>
+		<SQL id="selectWkOffKaiSeiUriRui">
+			<![CDATA[
+			SELECT
+				DAY_NET_VL
+				,KEI_1_VL
+				,KEI_1_COUNT_QT
+				,KEI_2_VL
+				,KEI_2_COUNT_QT
+				,KEI_3_VL
+				,KEI_3_COUNT_QT
+				,KEI_4_VL
+				,KEI_4_COUNT_QT
+				,KEI_5_VL
+				,KEI_5_COUNT_QT
+				,KEI_6_VL
+				,KEI_6_COUNT_QT
+				,KEI_7_VL
+				,KEI_7_COUNT_QT
+				,KEI_8_VL
+				,KEI_8_COUNT_QT
+				,KEI_9_VL
+				,KEI_9_COUNT_QT
+				,KEI_10_VL
+				,KEI_10_COUNT_QT
+				,SOTOZEI_TAISYO_VL
+				,UCHIZEI_TAISYO_VL
+				,HIKAZEI_TAISYO_VL
+				,SOTOZEI_VL
+				,UCHIZEI_VL
+				,TENSU_QT
+				,KYAKU_QT
+			FROM WK_OFF_KAIKEI_SEISAN_RUI WK
+			WHERE
+				COMP_CD = ?
+			AND	TENPO_CD = ?
+			AND	KEIJO_DT = ?
+			AND	POS_NB = ?
+			]]>
+		</SQL>
+		<SQL id="insertWkOffKaiSeiUriRui">
+			INSERT INTO WK_OFF_KAIKEI_SEISAN_RUI
+				(
+				COMP_CD
+				,TENPO_CD
+				,ENTRY_DT
+				,KEIJO_DT
+				,POS_NB
+				,DAY_NET_VL
+				,KEI_1_VL
+				,KEI_1_COUNT_QT
+				,KEI_2_VL
+				,KEI_2_COUNT_QT
+				,KEI_3_VL
+				,KEI_3_COUNT_QT
+				,KEI_4_VL
+				,KEI_4_COUNT_QT
+				,KEI_5_VL
+				,KEI_5_COUNT_QT
+				,KEI_6_VL
+				,KEI_6_COUNT_QT
+				,KEI_7_VL
+				,KEI_7_COUNT_QT
+				,KEI_8_VL
+				,KEI_8_COUNT_QT
+				,KEI_9_VL
+				,KEI_9_COUNT_QT
+				,KEI_10_VL
+				,KEI_10_COUNT_QT
+				,SOTOZEI_TAISYO_VL
+				,UCHIZEI_TAISYO_VL
+				,HIKAZEI_TAISYO_VL
+				,SOTOZEI_VL
+				,UCHIZEI_VL
+				,TENSU_QT
+				,KYAKU_QT
+				)
+			VALUES
+				(
+				?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				)
+		</SQL>
+		<SQL id="updateWkOffKaiSeiUriRui">
+			UPDATE
+				WK_OFF_KAIKEI_SEISAN_RUI
+			SET
+				ENTRY_DT = ?
+				,DAY_NET_VL = ?
+				,KEI_1_VL = ?
+				,KEI_1_COUNT_QT = ?
+				,KEI_2_VL = ?
+				,KEI_2_COUNT_QT = ?
+				,KEI_3_VL = ?
+				,KEI_3_COUNT_QT = ?
+				,KEI_4_VL = ?
+				,KEI_4_COUNT_QT = ?
+				,KEI_5_VL = ?
+				,KEI_5_COUNT_QT = ?
+				,KEI_6_VL = ?
+				,KEI_6_COUNT_QT = ?
+				,KEI_7_VL = ?
+				,KEI_7_COUNT_QT = ?
+				,KEI_8_VL = ?
+				,KEI_8_COUNT_QT = ?
+				,KEI_9_VL = ?
+				,KEI_9_COUNT_QT = ?
+				,KEI_10_VL = ?
+				,KEI_10_COUNT_QT = ?
+				,SOTOZEI_TAISYO_VL = ?
+				,UCHIZEI_TAISYO_VL = ?
+				,HIKAZEI_TAISYO_VL = ?
+				,SOTOZEI_VL = ?
+				,UCHIZEI_VL = ?
+				,TENSU_QT = ?
+				,KYAKU_QT = ?
+			WHERE
+				COMP_CD = ?
+			AND	TENPO_CD = ?
+			AND	KEIJO_DT = ?
+			AND	POS_NB = ?
+		</SQL>
+		<SQL id="insertWkOffKaiSeiUriSai">
+			INSERT INTO WK_OFF_KAIKEI_SEISAN_SAI
+				(
+				COMP_CD
+				,TENPO_CD
+				,ENTRY_DT
+				,KEIJO_DT
+				,POS_NB
+				,DAY_NET_VL
+				,KEI_1_VL
+				,KEI_1_COUNT_QT
+				,KEI_2_VL
+				,KEI_2_COUNT_QT
+				,KEI_3_VL
+				,KEI_3_COUNT_QT
+				,KEI_4_VL
+				,KEI_4_COUNT_QT
+				,KEI_5_VL
+				,KEI_5_COUNT_QT
+				,KEI_6_VL
+				,KEI_6_COUNT_QT
+				,KEI_7_VL
+				,KEI_7_COUNT_QT
+				,KEI_8_VL
+				,KEI_8_COUNT_QT
+				,KEI_9_VL
+				,KEI_9_COUNT_QT
+				,KEI_10_VL
+				,KEI_10_COUNT_QT
+				,SOTOZEI_TAISYO_VL
+				,UCHIZEI_TAISYO_VL
+				,HIKAZEI_TAISYO_VL
+				,SOTOZEI_VL
+				,UCHIZEI_VL
+				,TENSU_QT
+				,KYAKU_QT
+				)
+			VALUES
+				(
+				?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				,?
+				)
+		</SQL>
+	</Dao>
+
+	<!-- 印紙税件数データ集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.InshizeiKensuDataSyukeiDao">
+		<SQL id="insertKeiTenSirJiseki">
+		<![CDATA[
+			INSERT INTO
+				DT_TEN_INSHIZEI
+				(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					POS_QT,
+					SEISAN_QT,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				)
+			SELECT WTI.COMP_CD,
+				WTI.KEIJO_DT,
+				WTI.TENPO_CD,
+				WTI.POS_QT,
+				WTI.SEISAN_QT,
+				WTI.INSERT_USER_ID,
+				WTI.INSERT_TS,
+				WTI.UPDATE_USER_ID,
+				WTI.UPDATE_TS
+			FROM WK_TEN_INSHIZEI WTI
+			INNER JOIN DT_TEN_SEISAN_STATE DTSS
+				ON  DTSS.COMP_CD  = WTI.COMP_CD
+				AND DTSS.KEIJO_DT = WTI.KEIJO_DT
+				AND DTSS.TENPO_CD = WTI.TENPO_CD
+				AND DTSS.SEISAN_STATE_FG <> '2'
+			WHERE NOT EXISTS (SELECT
+				DTI.COMP_CD
+				FROM DT_TEN_INSHIZEI DTI
+				WHERE DTI.COMP_CD  = WTI.COMP_CD
+				AND DTI.KEIJO_DT = WTI.KEIJO_DT
+				AND DTI.TENPO_CD = WTI.TENPO_CD
+			)
+		]]>
+		</SQL>
+		<SQL id="updateKeiTenSirJiseki">
+		<![CDATA[
+			UPDATE
+				DT_TEN_INSHIZEI DTI
+			SET
+				POS_QT = POS_QT +
+					(SELECT
+						WTI.POS_QT
+					FROM WK_TEN_INSHIZEI WTI
+					INNER JOIN DT_TEN_SEISAN_STATE DTSS
+					ON  DTSS.COMP_CD  = WTI.COMP_CD
+					AND DTSS.KEIJO_DT = WTI.KEIJO_DT
+					AND DTSS.TENPO_CD = WTI.TENPO_CD
+					AND DTSS.SEISAN_STATE_FG <> '2'
+					WHERE DTI.COMP_CD  = WTI.COMP_CD
+					AND DTI.KEIJO_DT = WTI.KEIJO_DT
+					AND DTI.TENPO_CD = WTI.TENPO_CD
+					),
+				SEISAN_QT = SEISAN_QT +
+					(SELECT
+						WTI.SEISAN_QT
+					FROM WK_TEN_INSHIZEI WTI
+					INNER JOIN DT_TEN_SEISAN_STATE DTSS
+					ON  DTSS.COMP_CD  = WTI.COMP_CD
+					AND DTSS.KEIJO_DT = WTI.KEIJO_DT
+					AND DTSS.TENPO_CD = WTI.TENPO_CD
+					AND DTSS.SEISAN_STATE_FG <> '2'
+					WHERE DTI.COMP_CD  = WTI.COMP_CD
+					AND DTI.KEIJO_DT = WTI.KEIJO_DT
+					AND DTI.TENPO_CD = WTI.TENPO_CD
+					),
+				UPDATE_USER_ID = ?,
+				UPDATE_TS = ?
+			WHERE EXISTS (SELECT
+				WTI.COMP_CD
+				FROM WK_TEN_INSHIZEI WTI
+				INNER JOIN DT_TEN_SEISAN_STATE DTSS
+				ON  DTSS.COMP_CD  = WTI.COMP_CD
+				AND DTSS.KEIJO_DT = WTI.KEIJO_DT
+				AND DTSS.TENPO_CD = WTI.TENPO_CD
+				AND DTSS.SEISAN_STATE_FG <> '2'
+				WHERE DTI.COMP_CD  = WTI.COMP_CD
+				AND DTI.KEIJO_DT = WTI.KEIJO_DT
+				AND DTI.TENPO_CD = WTI.TENPO_CD
+				)
+			]]>
+		</SQL>
+	</Dao>
+
+	<!-- DPT打ち売上データ集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DPTutiUriageDataSyukeiDao">
+		<SQL id="updateTenDptuchiUri">
+			UPDATE
+				DT_TEN_DPTUCHI_URI DTDU
+			SET DTDU.URIAGE_VL = DTDU.URIAGE_VL +
+												(SELECT
+													URIAGE_VL
+												FROM
+														WK_TEN_DPTUCHI_URI WTDU
+												WHERE WTDU.COMP_CD = DTDU.COMP_CD
+												AND WTDU.KEIJO_DT = DTDU.KEIJO_DT
+												AND WTDU.TENPO_CD = DTDU.TENPO_CD
+												AND WTDU.BUNRUI1_CD = DTDU.BUNRUI1_CD
+													),
+			DTDU.TAISYO_URIAGE_VL = DTDU.TAISYO_URIAGE_VL +
+												(SELECT
+													TAISYO_URIAGE_VL
+												FROM
+														WK_TEN_DPTUCHI_URI WTDU
+												WHERE WTDU.COMP_CD = DTDU.COMP_CD
+												AND WTDU.KEIJO_DT = DTDU.KEIJO_DT
+												AND WTDU.TENPO_CD = DTDU.TENPO_CD
+												AND WTDU.BUNRUI1_CD = DTDU.BUNRUI1_CD
+													),
+			DTDU.TAISYO_URIAGE_QT = DTDU.TAISYO_URIAGE_QT +
+												(SELECT
+													TAISYO_URIAGE_QT
+												FROM
+														WK_TEN_DPTUCHI_URI WTDU
+												WHERE WTDU.COMP_CD = DTDU.COMP_CD
+												AND WTDU.KEIJO_DT = DTDU.KEIJO_DT
+												AND WTDU.TENPO_CD = DTDU.TENPO_CD
+												AND WTDU.BUNRUI1_CD = DTDU.BUNRUI1_CD
+													),
+			DTDU.UPDATE_USER_ID = ?,
+			DTDU.UPDATE_TS = ?
+		WHERE
+			EXISTS (SELECT
+						COMP_CD
+					FROM
+							WK_TEN_DPTUCHI_URI WTDU
+					WHERE WTDU.COMP_CD = DTDU.COMP_CD
+					AND WTDU.KEIJO_DT = DTDU.KEIJO_DT
+					AND WTDU.TENPO_CD = DTDU.TENPO_CD
+					AND WTDU.BUNRUI1_CD = DTDU.BUNRUI1_CD
+						)
+		</SQL>
+		<SQL id="insertTenDptuchiUri">
+			INSERT INTO
+				DT_TEN_DPTUCHI_URI
+				(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					BUNRUI1_CD,
+					URIAGE_VL,
+					TAISYO_URIAGE_VL,
+					TAISYO_URIAGE_QT,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				)
+				(SELECT
+						COMP_CD,
+						KEIJO_DT,
+						TENPO_CD,
+						BUNRUI1_CD,
+						URIAGE_VL,
+					TAISYO_URIAGE_VL,
+					TAISYO_URIAGE_QT,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				FROM
+						WK_TEN_DPTUCHI_URI WTDU
+				WHERE
+					NOT EXISTS (SELECT COMP_CD
+								FROM DT_TEN_DPTUCHI_URI DTDU
+								WHERE WTDU.COMP_CD = DTDU.COMP_CD
+								AND WTDU.KEIJO_DT = DTDU.KEIJO_DT
+								AND WTDU.TENPO_CD = DTDU.TENPO_CD
+								AND WTDU.BUNRUI1_CD = DTDU.BUNRUI1_CD
+								)
+				)
+		</SQL>
+	</Dao>
+
+	<!-- 単品売上差分集計処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinUriageSabunSyukeiDao">
+		<SQL id="deleteNewTanpinSummary">
+				DELETE FROM
+					WK_NEW_TANPIN_SUMMARY
+				WHERE COMP_CD = ?
+		</SQL>
+		<SQL id="insertNewTanpinSummary">
+				INSERT INTO
+					WK_NEW_TANPIN_SUMMARY
+					(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					POS_CD,
+					SYOHIN_CD,
+					BAITANKA_VL,
+					DAIBUNRUI2_CD,
+					RECEIPT_NA,
+					DAIBUNRUI1_CD,
+					KIKAKU_CD,
+					SYOHIN_KB,
+					MIX_MATCH_CD,
+					MIX_MATCH_TYPE_TX,
+					BUNDLE_1_QT,
+					BUNDLE_1_VL,
+					BUNDLE_2_QT,
+					BUNDLE_2_VL,
+					MIX_MATCH_KANA_NA,
+					URIAGE_VL,
+					URIAGE_GENKA_VL,
+					URIAGE_QT,
+					NEBIKI_VL,
+					NEBIKI_QT,
+					KAKO_VL,
+					KAKO_QT,
+					HAIKI_VL,
+					HAIKI_QT,
+					HENPIN_VL,
+					HENPIN_QT,
+					KYAKU_QT,
+					BUNRUI1_CD,
+					BUNRUI2_CD,
+					BUNRUI5_CD,
+					END_HANBAI_TS,
+					MM_POINT_TAISYO_KB)
+				(SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					POS_CD,
+					SYOHIN_CD,
+					BAITANKA_VL,
+					DAIBUNRUI2_CD,
+					RECEIPT_NA,
+					DAIBUNRUI1_CD,
+					KIKAKU_CD,
+					SYOHIN_KB,
+					MIX_MATCH_CD,
+					MIX_MATCH_TYPE_TX,
+					BUNDLE_1_QT,
+					BUNDLE_1_VL,
+					BUNDLE_2_QT,
+					BUNDLE_2_VL,
+					MIX_MATCH_KANA_NA,
+					URIAGE_VL,
+					URIAGE_GENKA_VL,
+					URIAGE_QT,
+					NEBIKI_VL,
+					NEBIKI_QT,
+					KAKO_VL,
+					KAKO_QT,
+					HAIKI_VL,
+					HAIKI_QT,
+					HENPIN_VL,
+					HENPIN_QT,
+					KYAKU_QT,
+					BUNRUI1_CD,
+					BUNRUI2_CD,
+					BUNRUI5_CD,
+					END_HANBAI_TS,
+					MM_POINT_TAISYO_KB
+				FROM
+					WK_NEW_TANPIN_SUMMARY_SABUN
+				WHERE COMP_CD = ?)
+		</SQL>
+	</Dao>
+
+	<!-- 新単品サマリ差分ファイル作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.ShinTanpinSummarySabunFileCreateDao">
+		<SQL id="selectTanpinSummarySabun">
+			<![CDATA[
+			SELECT
+				KEIJO_DT,
+				RTRIM(TENPO_CD) TENPO_CD,
+				POS_CD,
+				SYOHIN_CD,
+				LTRIM(TO_CHAR(BAITANKA_VL,'0000000')) BAITANKA_VL,
+				DAIBUNRUI2_CD,
+				CASE
+					WHEN RECEIPT_NA IS NULL
+						THEN RPAD(' ',12)
+					ELSE
+						RECEIPT_NA
+				END RECEIPT_NA,
+				DAIBUNRUI1_CD,
+				KIKAKU_CD,
+				SYOHIN_KB,
+				MIX_MATCH_CD,
+				MIX_MATCH_TYPE_TX,
+				BUNDLE_1_QT,
+				RPAD(BUNDLE_1_VL,10) BUNDLE_1_VL,
+				BUNDLE_2_QT,
+				RPAD(BUNDLE_2_VL,10) BUNDLE_2_VL,
+				CASE
+					WHEN MIX_MATCH_KANA_NA IS NULL
+						THEN RPAD(' ',18)
+					ELSE
+						MIX_MATCH_KANA_NA
+				END MIX_MATCH_KANA_NA,
+				CASE
+					WHEN URIAGE_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END URIAGE_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(URIAGE_VL),'0000000000')) URIAGE_VL,
+				CASE
+					WHEN URIAGE_GENKA_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END URIAGE_GENKA_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(URIAGE_GENKA_VL),'0000000000.00')) URIAGE_GENKA_VL,
+				CASE
+					WHEN URIAGE_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END URIAGE_QT_KIGO,
+				LTRIM(TO_CHAR(ABS(URIAGE_QT),'00000')) URIAGE_QT,
+				CASE
+					WHEN NEBIKI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END NEBIKI_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(NEBIKI_VL),'0000000000')) NEBIKI_VL,
+				CASE
+					WHEN NEBIKI_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END NEBIKI_QT_KIGO,
+				LTRIM(TO_CHAR(ABS(NEBIKI_QT),'00000')) NEBIKI_QT,
+				CASE
+					WHEN KAKO_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END KAKO_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(KAKO_VL),'0000000000')) KAKO_VL,
+				CASE
+					WHEN KAKO_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END KAKO_QT_KIGO,
+				LTRIM(TO_CHAR(ABS(KAKO_QT),'00000')) KAKO_QT,
+				CASE
+					WHEN HAIKI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END HAIKI_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(HAIKI_VL),'0000000000')) HAIKI_VL,
+				CASE
+					WHEN HAIKI_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END HAIKI_QT_KIGO,
+				LTRIM(TO_CHAR(ABS(HAIKI_QT),'00000')) HAIKI_QT,
+				CASE
+					WHEN HENPIN_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END HENPIN_VL_KIGO,
+				LTRIM(TO_CHAR(ABS(HENPIN_VL),'0000000000')) HENPIN_VL,
+				CASE
+					WHEN HENPIN_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END HENPIN_QT_KIGO,
+				LTRIM(TO_CHAR(ABS(HENPIN_QT),'00000')) HENPIN_QT,
+				LTRIM(TO_CHAR(ABS(KYAKU_QT),'000000')) KYAKU_QT,
+				LTRIM(TO_CHAR(ABS(BUNRUI1_CD),'0000')) BUNRUI1_CD,
+				LTRIM(TO_CHAR(ABS(BUNRUI2_CD),'0000')) BUNRUI2_CD,
+				LTRIM(TO_CHAR(ABS(BUNRUI5_CD),'0000')) BUNRUI5_CD,
+				END_HANBAI_TS,
+				MM_POINT_TAISYO_KB
+			FROM
+				WK_NEW_TANPIN_SUMMARY_SABUN
+			]]>
+		</SQL>
+		<SQL id="deleteTanpinSummarySabun">
+			TRUNCATE TABLE
+				WK_NEW_TANPIN_SUMMARY_SABUN
+		</SQL>
+	</Dao>
+
+	<!-- 新単品明細ログ差分ファイル作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.ShinTanpinMeiSabunFileSakuseiDao">
+		<SQL id="selectTanpinMeiSabun">
+		<![CDATA[
+			SELECT
+				RPAD(TORIHIKI_TS,8) TORIHIKI_TS,
+				'999999',
+				RTRIM(TENPO_CD) TENPO_CD,
+				TERMINAL_NB,
+				CHECKER_CD,
+				LTRIM(TO_CHAR(TOROHIKI_NB,'0000')) TOROHIKI_NB,
+				LTRIM(TO_CHAR(TORIHIKI_MEISAI_NB,'0000')) TORIHIKI_MEISAI_NB,
+				TORIKESHI_FG,
+				HENPIN_FG,
+				RE_ENTRY_FG,
+				KINKYU_ADD_FG,
+				HAIKI_FG,
+				LTRIM(TO_CHAR(ABS(SCAN_COUNT_QT),'0000')) SCAN_COUNT_QT,
+				LTRIM(TO_CHAR(ABS(KEYBOARD_COUNT_QT),'0000')) KEYBOARD_COUNT_QT,
+				REPORT_CD,
+				LTRIM(TO_CHAR(ABS(BUNRUI1_CD),'0000')) BUNRUI1_CD,
+				LTRIM(TO_CHAR(ABS(BUNRUI5_CD),'0000')) BUNRUI5_CD,
+				PLU_1_CD,
+				(CASE
+					WHEN PLU_2_CD  IS NULL
+						THEN RPAD(' ' , 13)
+					ELSE
+						PLU_2_CD
+				END) PLU_2_CD,
+				(CASE
+					WHEN URIAGE_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END) || LTRIM(TO_CHAR(ABS(URIAGE_QT),'00000.00')) URIAGE_QT,
+				(CASE
+					WHEN URIAGE_KOMI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END)  || LTRIM(TO_CHAR(ABS(URIAGE_KOMI_VL),'000000000')) URIAGE_KOMI_VL,
+				NEBIKI_TYPE_CD,
+				(CASE
+					WHEN NEBIKI_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END)  || LTRIM(TO_CHAR(ABS(NEBIKI_QT),'00000.00')) NEBIKI_QT,
+				(CASE
+					WHEN NEBIKI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END)  || LTRIM(TO_CHAR(ABS(NEBIKI_VL),'000000000')) NEBIKI_VL,
+				(CASE
+					WHEN SET_NEBIKI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END)  || LTRIM(TO_CHAR(ABS(SET_NEBIKI_VL),'000000000')) SET_NEBIKI_VL,
+				(CASE
+					WHEN URIAGE_GENKA_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END) || LTRIM(TO_CHAR(ABS(URIAGE_GENKA_VL),'00000.00')) URIAGE_GENKA_VL,
+				MIX_MATCH_CD,
+				(CASE
+					WHEN MIX_MATCH_NEBIKI_VL < 0
+						THEN '-'
+					ELSE
+						'+'
+				END) || LTRIM(TO_CHAR(ABS(MIX_MATCH_NEBIKI_VL),'000000000')) MIX_MATCH_NEBIKI_VL,
+				(CASE
+					WHEN DECIMAL_QT < 0
+						THEN '-'
+					ELSE
+						'+'
+				END) || LTRIM(TO_CHAR(DECIMAL_QT,'00000.00')) DECIMAL_QT
+			FROM
+				WK_TANPIN_MEI_SABUN
+			]]>
+		</SQL>
+		<SQL id="deleteTanpinMeiSabun">
+			TRUNCATE TABLE
+				WK_TANPIN_MEI_SABUN
+		</SQL>
+	</Dao>
+	<!-- オフライン会計精算売上データ取込処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OfflineKaikeiSeisanUriageDataTorikomiDao">
+		<SQL id="calcNikkeiNet">
+			UPDATE
+				WK_OFF_KAIKEI_SEISAN
+			SET
+				DAY_NET_VL = SOTOZEI_TAISYO_VL + UCHIZEI_TAISYO_VL + HIKAZEI_TAISYO_VL
+		</SQL>
+	</Dao>
+	<!-- 日別店別DPT別精算データ作成処理(外部IF) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.OutsideDayTenDPTSeisanDataCreateDao">
+		<SQL id="deleteDtKintaiIfRuiseki">
+		<![CDATA[
+			DELETE FROM DT_KINTAI_IF_RUISEKI KI
+			WHERE EXISTS
+				(SELECT RC.COMP_CD , RC.END_DT FROM
+					(SELECT R.COMP_CD, TO_CHAR(ADD_MONTHS(MIN(R.END_DT) ,-S.PARAMETER_TX),'YYYYMMDD') END_DT
+					FROM R_CALENDAR R
+					LEFT JOIN SYSTEM_CONTROL S
+					ON	S.SUBSYSTEM_ID = ?
+					AND	S.PARAMETER_ID = ?
+					AND	R.HONZIMESYORI_KB = ?
+					GROUP BY R.COMP_CD, S.PARAMETER_TX) RC
+				WHERE
+					KI.COMP_CD = RC.COMP_CD
+				AND	KI.KEIJO_DT <= RC.END_DT
+				AND	KI.COMP_CD = ?
+				)
+			]]>
+		</SQL>
+		<SQL id="insertDtKintaiIfRuiseki">
+		<![CDATA[
+			INSERT INTO DT_KINTAI_IF_RUISEKI
+				(
+				COMP_CD
+				,SEQ_RB
+				,KEIJO_DT
+				,TENPO_CD
+				,BUNRUI1_CD
+				,URIAGE_NUKI_VL
+				,URIAGE_QT
+				,KYAKU_QT
+				,DATA_RENKEI_FG
+				,INSERT_USER_ID
+				,INSERT_TS
+				,UPDATE_USER_ID
+				,UPDATE_TS
+				)
+				(
+				SELECT
+					DU.COMP_CD
+					,SEQ_DT_KINTAI_IF_RUISEKI.NEXTVAL
+					,DU.KEIJO_DT
+					,DU.TENPO_CD
+					,DU.BUNRUI1_CD
+					,DU.URIAGE_NUKI_VL - NVL(KI.URIAGE_NUKI_VL,0) URIAGE_NUKI_VL
+					,DU.URIAGE_QT  - NVL(KI.URIAGE_QT,0) URIAGE_QT
+					,DU.KYAKU_QT - NVL(KI.KYAKU_QT,0) KYAKU_QT
+					,'0'
+					,?
+					,?
+					,?
+					,?
+				FROM DT_TEN_DPT_URI DU
+				LEFT JOIN
+					(SELECT
+						COMP_CD
+						,KEIJO_DT
+						,TENPO_CD
+						,BUNRUI1_CD
+						,SUM(URIAGE_NUKI_VL) URIAGE_NUKI_VL
+						,SUM(URIAGE_QT) URIAGE_QT
+						,SUM(KYAKU_QT) KYAKU_QT
+					FROM DT_KINTAI_IF_RUISEKI
+					GROUP BY
+						COMP_CD
+						,KEIJO_DT
+						,TENPO_CD
+						,BUNRUI1_CD
+					) KI
+				ON	KI.COMP_CD = DU.COMP_CD
+				AND	KI.KEIJO_DT = DU.KEIJO_DT
+				AND	KI.TENPO_CD = DU.TENPO_CD
+				AND	KI.BUNRUI1_CD = DU.BUNRUI1_CD
+				LEFT JOIN
+					(SELECT COMP_CD, MAX(END_DT) END_DT
+					FROM R_CALENDAR
+					WHERE HONZIMESYORI_KB = ?
+					GROUP BY COMP_CD
+					) RC
+				ON	RC.COMP_CD = DU.COMP_CD
+				WHERE
+					DU.COMP_CD = ?
+				AND	DU.KEIJO_DT > RC.END_DT
+				AND	(
+						DU.URIAGE_NUKI_VL - NVL(KI.URIAGE_NUKI_VL,0) <> 0
+					OR	DU.URIAGE_QT  - NVL(KI.URIAGE_QT,0) <> 0
+					OR	DU.KYAKU_QT - NVL(KI.KYAKU_QT,0) <> 0
+					)
+				)
+			]]>
+		</SQL>
+		<SQL id="updateDtKintaiIfRuiseki">
+			UPDATE
+				DT_KINTAI_IF_RUISEKI
+			SET
+				DATA_RENKEI_FG = '1'
+				,UPDATE_USER_ID = ?
+				,UPDATE_TS = ?
+			WHERE
+				COMP_CD = ?
+			AND	DATA_RENKEI_FG = '0'
+		</SQL>
+	</Dao>
+	<!-- KSPSP用商品マスタファイル生成処理  -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.KspspSyohinMasterCreateFileDao">
+		<SQL id="createSyohinMaster">
+			<![CDATA[
+						SELECT
+								RS.SYOHIN_CD,
+								RS.BUNRUI1_CD,
+								RS.BUNRUI2_CD,
+								RS.BUNRUI5_CD,
+								CONCAT(CONCAT(CONCAT(RS.KIKAKU_KANJI_2_NA, '　'),CONCAT(RS.HINMEI_KANJI_NA,'　')), RS.KIKAKU_KANJI_NA),
+								RS.HINMEI_KANA_NA
+						FROM
+						(
+						 SELECT
+								 RFS.COMP_CD,
+								 RFS.SYOHIN_CD,
+								 RFS.HINMEI_KANA_NA,
+								 RFS.HINMEI_KANJI_NA,
+								 RFS.KIKAKU_KANJI_NA,
+									RFS.KIKAKU_KANJI_2_NA,
+								 RFS.BUNRUI1_CD,
+								 RFS.BUNRUI2_CD,
+								 RFS.BUNRUI5_CD
+						 FROM
+								 R_FI_SYOHIN RFS
+						 INNER JOIN
+						 (
+							SELECT
+									COMP_CD,
+									SYOHIN_CD,
+									MAX(YUKO_DT) AS YUKO_DT
+							FROM
+									R_FI_SYOHIN
+							WHERE
+									YUKO_DT <= ?
+							GROUP BY
+									COMP_CD,
+									SYOHIN_CD
+						 ) TMPR
+						 ON
+								 RFS.COMP_CD = TMPR.COMP_CD AND
+								 RFS.SYOHIN_CD = TMPR.SYOHIN_CD AND
+								 RFS.YUKO_DT = TMPR.YUKO_DT
+						 WHERE
+								 RFS.SHIIRE_HANBAI_KB IN ('1','2')
+						) RS
+					]]>
+		</SQL>
+	</Dao>
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiTorikomiDao">
+		<SQL id="syohinCdUpdate">
+			<![CDATA[
+				UPDATE
+					WK_URIAGE_RUISEKI
+				SET
+					SYOHIN_CD =
+						CASE WHEN SUBSTR(POS_CD, 1, 2) = '02'
+								THEN SUBSTR(POS_CD, 1, 12) || '0'
+							WHEN SUBSTR(POS_CD, 1, 2) = '23'
+								THEN SUBSTR(POS_CD, 1, 12) || '0'
+							ELSE POS_CD END
+				WHERE
+					SYOHIN_CD = '0000000000000'
+				AND
+					POS_CD <> '0000000000000'
+			]]>
+		</SQL>
+	</Dao>
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiDataSyukeiDao">
+		<SQL id="deleteUriageRuiseki">
+			TRUNCATE TABLE DT_URIAGE_RUISEKI
+		</SQL>
+		<SQL id="createUriageRuiseki">
+			<![CDATA[
+				INSERT INTO DT_URIAGE_RUISEKI
+				SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					SUM(URIAGE_QT),
+					SUM(URIAGE_VL),
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					WK_URIAGE_RUISEKI
+				WHERE
+					COMP_CD = ?
+				GROUP BY
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD
+			]]>
+		</SQL>
+	</Dao>
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiIsouDao">
+		<SQL id="deleteIfUriageRuiseki">
+			DELETE FROM IF_DT_URIAGE_RUISEKI
+		</SQL>
+		<SQL id="createIfUriageRuiseki">
+			<![CDATA[
+				INSERT INTO IF_DT_URIAGE_RUISEKI
+				SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					DT_URIAGE_RUISEKI
+			]]>
+		</SQL>
+	</Dao>
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiIsouZenDao">
+		<SQL id="deleteUriageRuisekiZen">
+			TRUNCATE TABLE DT_URIAGE_RUISEKI_ZEN
+		</SQL>
+		<SQL id="createUriageRuisekiZen">
+			<![CDATA[
+				INSERT INTO DT_URIAGE_RUISEKI_ZEN
+				SELECT
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					DT_URIAGE_RUISEKI
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 売上累積差分作成処理  -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiSabunSakuseiDao">
+		<SQL id="deleteDtUriageRuisekiSabun">
+			<![CDATA[
+				TRUNCATE TABLE
+						DT_URIAGE_RUISEKI_SABUN
+			]]>
+		</SQL>
+		<SQL id="selectWkNewTanpinSummarySabun">
+			<![CDATA[
+				SELECT
+					*
+				FROM
+					WK_NEW_TANPIN_SUMMARY_SABUN
+				WHERE
+					COMP_CD = ?
+			]]>
+		</SQL>
+		<SQL id="insertDtUriageRuisekiSabun">
+			<![CDATA[
+				INSERT INTO DT_URIAGE_RUISEKI_SABUN
+				(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				)
+				SELECT
+					WK.COMP_CD,
+					WK.KEIJO_DT,
+					WK.TENPO_CD,
+					WK.SYOHIN_CD,
+					WK.HANBAI_QT - NVL(ZEN.HANBAI_QT, 0),
+					WK.HANBAI_VL - NVL(ZEN.HANBAI_VL, 0),
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					(
+						SELECT
+							COMP_CD,
+							KEIJO_DT,
+							TENPO_CD,
+							SYOHIN_CD,
+							SUM(URIAGE_QT) AS HANBAI_QT,
+							SUM(URIAGE_VL) AS HANBAI_VL
+						FROM
+							WK_NEW_TANPIN_SUMMARY_SABUN
+						WHERE
+							COMP_CD = ?
+							AND SYOHIN_CD <> '0000000000000'
+						GROUP BY
+							COMP_CD,
+							KEIJO_DT,
+							TENPO_CD,
+							SYOHIN_CD
+					) WK
+				LEFT JOIN
+					DT_URIAGE_RUISEKI_ZEN ZEN
+					ON WK.COMP_CD = ZEN.COMP_CD
+					AND WK.KEIJO_DT = ZEN.KEIJO_DT
+					AND WK.TENPO_CD = ZEN.TENPO_CD
+					AND WK.SYOHIN_CD = ZEN.SYOHIN_CD
+				WHERE
+					ZEN.COMP_CD IS NULL
+					OR WK.HANBAI_QT <> ZEN.HANBAI_QT
+					OR WK.HANBAI_VL <> ZEN.HANBAI_VL
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 売上累積差分データ移送処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageRuisekiSabunIsouDao">
+		<SQL id="selectDtUriageRuisekiSabun">
+			<![CDATA[
+				SELECT
+					*
+				FROM
+					DT_URIAGE_RUISEKI_SABUN
+				WHERE
+					COMP_CD = ?
+			]]>
+		</SQL>
+		<SQL id="updateIfDtUriageRuisekiSabun">
+			<![CDATA[
+				MERGE INTO
+						IF_DT_URIAGE_RUISEKI IF
+				USING
+						DT_URIAGE_RUISEKI_SABUN DT
+				ON (IF.COMP_CD = DT.COMP_CD
+						AND IF.KEIJO_DT = DT.KEIJO_DT
+						AND IF.TENPO_CD = DT.TENPO_CD
+						AND IF.SYOHIN_CD = DT.SYOHIN_CD )
+				WHEN MATCHED THEN
+				UPDATE SET
+					 IF.HANBAI_QT = IF.HANBAI_QT + DT.HANBAI_QT,
+					 IF.HANBAI_VL = IF.HANBAI_VL + DT.HANBAI_VL,
+					 IF.UPDATE_USER_ID = ?,
+					 IF.UPDATE_TS = ?
+			]]>
+		</SQL>
+		<SQL id="insertIfDtUriageRuisekiSabun">
+			<![CDATA[
+				INSERT INTO IF_DT_URIAGE_RUISEKI
+				(
+					COMP_CD,
+					KEIJO_DT,
+					TENPO_CD,
+					SYOHIN_CD,
+					HANBAI_QT,
+					HANBAI_VL,
+					IF_INSERT_TS,
+					INSERT_USER_ID,
+					INSERT_TS,
+					UPDATE_USER_ID,
+					UPDATE_TS
+				)
+				SELECT
+					DT.COMP_CD,
+					DT.KEIJO_DT,
+					DT.TENPO_CD,
+					DT.SYOHIN_CD,
+					DT.HANBAI_QT,
+					DT.HANBAI_VL,
+					?,
+					?,
+					?,
+					?,
+					?
+				FROM
+					DT_URIAGE_RUISEKI_SABUN DT
+				LEFT JOIN
+					IF_DT_URIAGE_RUISEKI IF
+					ON DT.COMP_CD = IF.COMP_CD
+					AND DT.KEIJO_DT = IF.KEIJO_DT
+					AND DT.TENPO_CD = IF.TENPO_CD
+					AND DT.SYOHIN_CD = IF.SYOHIN_CD
+				WHERE
+					IF.COMP_CD IS NULL
+			]]>
+		</SQL>
+	</Dao>
+	<!-- POS実績取込処理(単品精算) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinSeisanTorikomiDao">
+		<SQL id="deleteTmpTanpinSeisan">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_TANPIN_SEISAN
+			]]>
+		</SQL>
+		<SQL id="insertTmpTanpinSeisan">
+			<![CDATA[
+				INSERT INTO TMP_TANPIN_SEISAN
+					(
+						COMP_CD,
+						EIGYO_DT,
+						TENPO_CD,
+						TANPIN_SHIKIBETSU_CD,
+						TANPIN_CD,
+						URIAGE_SOURI_QT,
+						URIAGE_SOURI_VL,
+						URIAGE_HITEIBAN_QT,
+						URIAGE_HITEIBAN_VL,
+						MM_NEBIKI_QT,
+						MM_NEBIKI_VL,
+						LOS_QT,
+						LOS_VL,
+						NEBIKI_REGI_QT,
+						NEBIKI_REGI_VL,
+						NEBIKI_SC_QT,
+						NEBIKI_SC_VL,
+						HAIKI_QT,
+						HAIKI_VL,
+						GAISAN_ARARI_SOURI_VL,
+						GAISAN_ARARI_HITEIBAN_VL,
+						TEBAN_TANKA_VL,
+						TOKUBAI_KIKAKU_NO,
+						SAISYU_URIAGE_TM,
+						INSERT_USER_ID,
+						INSERT_TS,
+						UPDATE_USER_ID,
+						UPDATE_TS
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+				<SQL id="selectSyohinMaster">
+						<![CDATA[
+								SELECT
+										SYOHIN.BUNRUI1_CD,
+										COALESCE(
+												TENBETU_SYOHIN.GENTANKA_VL,
+												SYOHIN.GENTANKA_VL
+										) AS GENTANKA_VL,
+										SYOHIN.YUKO_DT AS YUKO_DT
+								FROM
+										R_FI_SYOHIN SYOHIN
+								LEFT OUTER JOIN
+										R_FI_TENBETU_SYOHIN TENBETU_SYOHIN
+										ON SYOHIN.COMP_CD = TENBETU_SYOHIN.COMP_CD
+										AND SYOHIN.SYOHIN_CD = TENBETU_SYOHIN.SYOHIN_CD
+										AND SYOHIN.YUKO_DT = TENBETU_SYOHIN.YUKO_DT
+										AND TENBETU_SYOHIN.TENPO_CD = ?
+								WHERE
+										SYOHIN.SYOHIN_CD = ?
+								ORDER BY
+										YUKO_DT DESC
+						]]>
+				</SQL>
+	</Dao>
+	<!-- POS実績取込処理(部門精算) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.BumonSeisanTorikomiDao">
+		<SQL id="deleteTmpBumonSeisan">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_BUMON_SEISAN
+			]]>
+		</SQL>
+		<SQL id="insertTmpBumonSeisan">
+			<![CDATA[
+				INSERT INTO TMP_BUMON_SEISAN
+					(
+						COMP_CD,
+						EIGYO_DT,
+						TENPO_CD,
+						BUMON_CD,
+						URIAGE_KYAKU_QT,
+						URIAGE_SOURI_QT,
+						URIAGE_SOURI_VL,
+						URIAGE_HITEIBAN_QT,
+						URIAGE_HITEIBAN_VL,
+						LOS_QT,
+						LOS_VL,
+						NEBIKI_REGI_QT,
+						NEBIKI_REGI_VL,
+						NEBIKI_SC_QT,
+						NEBIKI_SC_VL,
+						HAIKI_QT,
+						HAIKI_VL,
+						HENPIN_QT,
+						HENPIN_VL,
+						GAISAN_ARARI_SOURI_VL,
+						GAISAN_ARARI_HITEIBAN_VL,
+						INSERT_USER_ID,
+						INSERT_TS,
+						UPDATE_USER_ID,
+						UPDATE_TS
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+				<SQL id="selectSyohinMaster">
+						<![CDATA[
+								SELECT
+										SYOHIN.BUNRUI1_CD,
+										COALESCE(
+												TENBETU_SYOHIN.GENTANKA_VL,
+												SYOHIN.GENTANKA_VL
+										) AS GENTANKA_VL,
+										SYOHIN.YUKO_DT AS YUKO_DT
+								FROM
+										R_FI_SYOHIN SYOHIN
+								LEFT OUTER JOIN
+										R_FI_TENBETU_SYOHIN TENBETU_SYOHIN
+										ON SYOHIN.COMP_CD = TENBETU_SYOHIN.COMP_CD
+										AND SYOHIN.SYOHIN_CD = TENBETU_SYOHIN.SYOHIN_CD
+										AND SYOHIN.YUKO_DT = TENBETU_SYOHIN.YUKO_DT
+										AND TENBETU_SYOHIN.TENPO_CD = ?
+								WHERE
+										SYOHIN.SYOHIN_CD = ?
+								ORDER BY
+										YUKO_DT DESC
+						]]>
+				</SQL>
+	</Dao>
+	<!-- POS実績取込処理(レジ別取引精算) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.RegiTorihikiSeisanTorikomiDao">
+		<SQL id="deleteTmpRegiTorihikiSeisan">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_REGI_TORIHIKI_SEISAN
+			]]>
+		</SQL>
+		<SQL id="insertTmpRegiTorihikiSeisan">
+			<![CDATA[
+				INSERT INTO TMP_REGI_TORIHIKI_SEISAN
+					(
+						COMP_CD,
+						EIGYO_DT,
+						TENPO_CD,
+						FLOAR_NO,
+						REGI_NO,
+						TORIHIKI_CD,
+						TYPE_KB,
+						KYAKU_QT,
+						TEN_KAISUU_QT,
+						KINGAKU_VL,
+						NEBIKI_VL,
+						INSERT_USER_ID,
+						INSERT_TS,
+						UPDATE_USER_ID,
+						UPDATE_TS
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+	</Dao>
+	<!-- POS実績取込処理(責任者精算) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.SekininsyaSeisanTorikomiDao">
+		<SQL id="deleteTmpSekininshaSeisan">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_SEKININSYA_SEISAN
+			]]>
+		</SQL>
+		<SQL id="insertTmpSekininshaSeisan">
+			<![CDATA[
+				INSERT INTO TMP_SEKININSYA_SEISAN
+					(
+						COMP_CD,
+						EIGYO_DT,
+						TENPO_CD,
+						CHECKER_CD,
+						JIKAN_TM,
+						TORIHIKI_CD,
+						TYPE_KB,
+						KYAKU_QT,
+						TEN_KAISUU_QT,
+						KINGAKU_VL,
+						NEBIKI_VL,
+						INSERT_USER_ID,
+						INSERT_TS,
+						UPDATE_USER_ID,
+						UPDATE_TS
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+	</Dao>
+	<!-- POS実績取込処理(単品点検) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.TanpinTenkenTorikomiDao">
+		<SQL id="deleteTmpTanpinTenken">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_TANPIN_TENKEN
+			]]>
+		</SQL>
+		<SQL id="insertTmpTanpinTenken">
+			<![CDATA[
+				INSERT /*+ APPEND */ INTO TMP_TANPIN_TENKEN (
+					COMP_CD
+					,EIGYO_DT
+					,TENPO_CD
+					,SYOHIN_CD
+					,JIKANTAI_NO
+					,URIAGE_QT
+					,URIAGE_VL
+					,NEBIKI_REGI_QT
+					,NEBIKI_REGI_VL
+					,ARARI_VL
+					,INSERT_USER_ID
+					,INSERT_TS
+					,UPDATE_USER_ID
+					,UPDATE_TS)
+				SELECT
+					?
+					,TO_CHAR(TO_DATE(KEIJYO_DT, 'yyyy/mm/dd'), 'yyyy/mm/dd')
+					,LPAD(RTRIM(TENPO_CD), 6, '0')
+					,SYOHIN_CD
+					,SUBSTR(HHMM, 1, 2)
+					,SUM(URIAGE_QT)
+					,SUM(URIAGE_VL)
+					,0
+					,0
+					,0
+					,?
+					,?
+					,?
+					,?
+				FROM
+					TMP_JIKANTAI_FORMAT1
+				GROUP BY
+					KEIJYO_DT
+					,TENPO_CD
+					,SYOHIN_CD
+					,SUBSTR(HHMM, 1, 2)
+			]]>
+		</SQL>
+	</Dao>
+	<!-- POS実績取込処理(部門点検) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.BumonTenkenTorikomiDao">
+		<SQL id="deleteWkBumonTenkenSyukei">
+			<![CDATA[
+				TRUNCATE TABLE
+					WK_BUMON_TENKEN_SYUKEI
+			]]>
+		</SQL>
+		<SQL id="insertWkBumonTenkenSyukei">
+			<![CDATA[
+				INSERT /*+ APPEND */ INTO WK_BUMON_TENKEN_SYUKEI (
+					COMP_CD
+					,KEIJO_DT
+					,TENPO_CD
+					,BUMON_CD
+					,JIKANTAI_NO
+					,KYAKU_QT
+					,URIAGE_QT
+					,URIAGE_VL
+					,NEBIKI_REGI_QT
+					,NEBIKI_REGI_VL
+					,INSERT_USER_ID
+					,INSERT_TS
+					,UPDATE_USER_ID
+					,UPDATE_TS)
+				SELECT
+					?
+					,TO_CHAR(TO_DATE(FORMAT1.KEIJYO_DT, 'yyyy/mm/dd'), 'yyyy/mm/dd')
+					,LPAD(RTRIM(FORMAT1.TENPO_CD), 6, '0')
+					,CASE WHEN SYOHIN.SYOHIN_CD IS NOT NULL THEN SYOHIN.BUNRUI1_CD
+							ELSE (
+									SELECT SUBSTRB(TO_CHAR(PARAMETER_TX),1,4)
+									FROM SYSTEM_CONTROL
+									WHERE SUBSYSTEM_ID = 'URIAGE' AND PARAMETER_ID = 'DUMMY_BUNRUI1_CD'
+								)
+					END AS BUMON_CD
+					,SUBSTR(FORMAT1.HHMM, 1, 2)
+					,0
+					,RTRIM(FORMAT1.URIAGE_QT)
+					,RTRIM(FORMAT1.URIAGE_VL)
+					,0
+					,0
+					,?
+					,?
+					,?
+					,?
+				FROM
+					TMP_JIKANTAI_FORMAT1 FORMAT1
+				LEFT OUTER JOIN
+				(
+					SELECT
+						SYOHIN.*
+					FROM
+						R_FI_SYOHIN SYOHIN
+					INNER JOIN
+						(SELECT COMP_CD, SYOHIN_CD, MAX(YUKO_DT) AS YUKO_DT FROM R_FI_SYOHIN SYOHIN GROUP BY COMP_CD, SYOHIN_CD) MAX_YUKO_DT
+					ON MAX_YUKO_DT.COMP_CD = SYOHIN.COMP_CD AND MAX_YUKO_DT.SYOHIN_CD = SYOHIN.SYOHIN_CD AND MAX_YUKO_DT.YUKO_DT = SYOHIN.YUKO_DT
+				)SYOHIN
+				ON SYOHIN.COMP_CD = ? AND SYOHIN.SYOHIN_CD = FORMAT1.SYOHIN_CD
+			]]>
+		</SQL>
+		<!--<SQL id="checkSyohinMaster">
+			<![CDATA[
+				SELECT
+					FORMAT1.SYOHIN_CD
+				FROM
+					TMP_JIKANTAI_FORMAT1 FORMAT1
+				LEFT OUTER JOIN
+					R_FI_SYOHIN SYOHIN
+				ON SYOHIN.COMP_CD = ? AND SYOHIN.SYOHIN_CD = FORMAT1.SYOHIN_CD
+				WHERE
+					SYOHIN.SYOHIN_CD IS NULL
+				ORDER BY
+					FORMAT1.SYOHIN_CD
+			]]>
+		</SQL>-->
+	</Dao>
+	<!-- POS実績取込処理(レジ別取引点検) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.RegiTorihikiTenkenTorikomiDao">
+		<SQL id="deleteTmpRegiTorihikiTenken">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_REGI_TORIHIKI_TENKEN
+			]]>
+		</SQL>
+		<SQL id="insertTmpRegiTorihikiTenken">
+			<![CDATA[
+				INSERT /*+ APPEND */ INTO TMP_REGI_TORIHIKI_TENKEN (
+					COMP_CD
+					,EIGYO_DT
+					,TENPO_CD
+					,FLOAR_NO
+					,REGI_NO
+					,JIKANTAI_NO
+					,TORIHIKI_CD
+					,TYPE_KB
+					,KYAKU_QT
+					,TEN_KAISUU_QT
+					,KINGAKU_VL
+					,NEBIKI_VL
+					,INSERT_USER_ID
+					,INSERT_TS
+					,UPDATE_USER_ID
+					,UPDATE_TS)
+				SELECT
+					?
+					,TO_CHAR(TO_DATE(FORMAT1.KEIJYO_DT, 'yyyy/mm/dd'), 'yyyy/mm/dd')
+					,LPAD(RTRIM(FORMAT1.TENPO_CD), 6, '0')
+					,0
+					,0
+					,FORMAT1.HHMM
+					,'0002'
+					,'0'
+					,NVL(FORMAT2.KYAKU_QT, 0)
+					,0
+					,FORMAT1.URIAGE_VL
+					,0
+					,?
+					,?
+					,?
+					,?
+				FROM
+					(
+						SELECT
+							KEIJYO_DT
+							,TENPO_CD
+							,HHMM
+							,SUM(URIAGE_VL) AS URIAGE_VL
+						FROM
+							TMP_JIKANTAI_FORMAT1
+						/*#6733 ADD 2023.02.24 TUNG.LT (S)*/
+						WHERE TO_CHAR(TO_DATE(KEIJYO_DT, 'yyyy/mm/dd'), 'yyyymmdd') = ?
+						/*#6733 ADD 2023.02.24 TUNG.LT (E)*/
+						GROUP BY
+							KEIJYO_DT
+							,TENPO_CD
+							,HHMM
+					) FORMAT1
+				LEFT OUTER JOIN
+					(
+						SELECT
+							KEIJYO_DT
+							,TENPO_CD
+							,HHMM
+							,KYAKU_SYUKEI_CD
+							,SUM(KYAKU_QT) AS KYAKU_QT
+						FROM
+							TMP_JIKANTAI_FORMAT2
+						WHERE
+							KYAKU_SYUKEI_TANI = 'STR'
+						GROUP BY
+							KEIJYO_DT
+							,TENPO_CD
+							,HHMM
+							,KYAKU_SYUKEI_CD
+					) FORMAT2
+				ON
+					FORMAT2.KEIJYO_DT = FORMAT1.KEIJYO_DT
+					AND FORMAT2.TENPO_CD = FORMAT1.TENPO_CD
+					AND FORMAT2.HHMM = FORMAT1.HHMM
+					AND FORMAT2.KYAKU_SYUKEI_CD = LPAD(RTRIM(FORMAT1.TENPO_CD), 10, '0')
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 実績集計処理(部門点検) -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.BumonTenkenJisekiSyukeiDao">
+		<SQL id="deleteTmpBumonTenken">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_BUMON_TENKEN
+			]]>
+		</SQL>
+		<SQL id="insertTmpBumonTenken">
+			<![CDATA[
+				INSERT /*+ APPEND */ INTO TMP_BUMON_TENKEN (
+					COMP_CD
+					,EIGYO_DT
+					,TENPO_CD
+					,BUMON_CD
+					,JIKANTAI_NO
+					,KYAKU_QT
+					,URIAGE_QT
+					,URIAGE_VL
+					,NEBIKI_REGI_QT
+					,NEBIKI_REGI_VL
+					,ARARI_VL
+					,INSERT_USER_ID
+					,INSERT_TS
+					,UPDATE_USER_ID
+					,UPDATE_TS)
+				SELECT
+					BUMON_TENKEN_SYUKEI.COMP_CD
+					,BUMON_TENKEN_SYUKEI.KEIJO_DT
+					,BUMON_TENKEN_SYUKEI.TENPO_CD
+					,BUMON_TENKEN_SYUKEI.BUMON_CD
+					,BUMON_TENKEN_SYUKEI.JIKANTAI_NO
+					,NVL(FORMAT2.KYAKU_QT, 0)
+					,BUMON_TENKEN_SYUKEI.URIAGE_QT
+					,BUMON_TENKEN_SYUKEI.URIAGE_VL
+					,0
+					,0
+					,BUMON_TENKEN_SYUKEI.ARARI_VL
+					,?
+					,?
+					,?
+					,?
+				FROM
+					(
+						SELECT
+							COMP_CD
+							,KEIJO_DT
+							,TENPO_CD
+							,BUMON_CD
+							,JIKANTAI_NO
+							,SUM(URIAGE_QT) AS URIAGE_QT
+							,SUM(URIAGE_VL) AS URIAGE_VL
+							,SUM(ARARI_VL) AS ARARI_VL
+						FROM
+							WK_BUMON_TENKEN_SYUKEI
+						GROUP BY
+							COMP_CD
+							,KEIJO_DT
+							,TENPO_CD
+							,BUMON_CD
+							,JIKANTAI_NO
+					) BUMON_TENKEN_SYUKEI
+				LEFT OUTER JOIN
+					(
+						SELECT
+							TO_CHAR(TO_DATE(KEIJYO_DT, 'yyyy/mm/dd'), 'yyyy/mm/dd') AS KEIJYO_DT
+							,LPAD(RTRIM(TENPO_CD), 6, '0') AS TENPO_CD
+							/*#5040 Mod J.Endo 2017.08.01 (S)*/
+							/*,SUBSTR(HHMM, 1, 2) AS HH*/
+							,HHMM
+							/*#5040 Mod J.Endo 2017.08.01 (E)*/
+							,KYAKU_SYUKEI_CD
+							,SUM(KYAKU_QT) AS KYAKU_QT
+						FROM
+							TMP_JIKANTAI_FORMAT2
+						WHERE
+							KYAKU_SYUKEI_TANI = 'TYP'
+						GROUP BY
+							KEIJYO_DT
+							,TENPO_CD
+							/*#5040 Mod J.Endo 2017.08.01 (S)*/
+							/*,SUBSTR(HHMM, 1, 2)*/
+							,HHMM
+							/*#5040 Mod J.Endo 2017.08.01 (E)*/
+							,KYAKU_SYUKEI_CD
+					) FORMAT2
+				ON
+					FORMAT2.KEIJYO_DT = BUMON_TENKEN_SYUKEI.KEIJO_DT
+					AND FORMAT2.TENPO_CD = BUMON_TENKEN_SYUKEI.TENPO_CD
+					/*#5040 Mod J.Endo 2017.08.01 (S)*/
+					/*AND FORMAT2.HH = BUMON_TENKEN_SYUKEI.JIKANTAI_NO*/
+					AND FORMAT2.HHMM = BUMON_TENKEN_SYUKEI.JIKANTAI_NO
+					/*#5040 Mod J.Endo 2017.08.01 (E)*/
+					AND FORMAT2.KYAKU_SYUKEI_CD = LPAD(RTRIM(BUMON_TENKEN_SYUKEI.BUMON_CD), 10, '0')
+			]]>
+		</SQL>
+	</Dao>
+	<!-- 時間帯データ取込 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.JikantaiDataTorikomiDao">
+		<SQL id="deleteTmpJikantaiFormat1">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_JIKANTAI_FORMAT1
+			]]>
+		</SQL>
+		<SQL id="deleteTmpJikantaiFormat2">
+			<![CDATA[
+				TRUNCATE TABLE
+					TMP_JIKANTAI_FORMAT2
+			]]>
+		</SQL>
+		<SQL id="insertTmpJikantaiFormat1">
+			<![CDATA[
+				INSERT INTO TMP_JIKANTAI_FORMAT1
+					(
+						TENPO_CD,
+						SYOHIN_CD,
+						HHMM,
+						URIAGE_QT,
+						URIAGE_VL,
+						KYAKU_QT,
+						URIAGE_NUKI_VL,
+						KEIJYO_DT
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+		<SQL id="insertTmpJikantaiFormat2">
+			<![CDATA[
+				INSERT INTO TMP_JIKANTAI_FORMAT2
+					(
+						TENPO_CD,
+						KYAKU_SYUKEI_TANI,
+						KYAKU_SYUKEI_CD,
+						HHMM,
+						KYAKU_QT,
+						KEIJYO_DT
+					)
+					VALUES
+					(
+						?, ?, ?, ?, ?, ?
+					)
+			]]>
+		</SQL>
+	</Dao>
+		<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.HamperItemSyukeiDao">
+		<SQL id="insertDtTanpinSeisanHmprBrCk">
+			INSERT INTO
+				DT_TANPIN_SEISAN_HMPR_BR_CK
+				(
+					COMP_CD
+					,KEIJO_DT
+					,TENPO_CD
+					,TANPIN_CD
+					,URIAGE_SOURI_QT
+					,URIAGE_SOURI_VL
+					,URIAGE_HITEIBAN_QT
+					,URIAGE_HITEIBAN_VL
+					,NEBIKI_MM_QT
+					,NEBIKI_MM_VL
+					,LOS_QT
+					,LOS_VL
+					,NEBIKI_REGI_QT
+					,NEBIKI_REGI_VL
+					,NEBIKI_SC_QT
+					,NEBIKI_SC_VL
+					,HAIKI_QT
+					,HAIKI_VL
+					,TEIBAN_TANKA_VL
+					,TOKUBAI_KIKAKU_NO
+					,END_HANBAI_TS
+					,DAIBUNRUI2_CD
+					,BUNRUI1_CD
+					,BUNRUI2_CD
+					,BUNRUI5_CD
+					,HINMEI_KANJI_NA
+					,KIKAKU_KANJI_NA
+					,KIKAKU_KANJI_2_NA
+					,HINMEI_KANA_NA
+					,KIKAKU_KANA_NA
+					,KIKAKU_KANA_2_NA
+					,REC_HINMEI_KANA_NA
+					,TEIKAN_KB
+					,ZEI_KB
+					,TAX_RATE_KB
+					,TAX_RT
+					,MST_BAITANKA_VL
+					,SHIIRE_HANBAI_KB
+					,TANAOROSHI_GENKA_KB
+					,INSERT_USER_ID
+					,INSERT_TS
+					,UPDATE_USER_ID
+					,UPDATE_TS
+					,HANBAI_WEIGHT_QT
+					,DATA_SAKUSEI_DT
+					,URIAGE_NUKI_SOURI_VL
+					,URIAGE_ZEI_VL
+					,HENPIN_QT
+					,HENPIN_WEIGHT
+					,HENPIN_KOMI_VL
+					,HENPIN_NUKI_VL
+					,HENPIN_ZEI_VL
+					,URIAGE_KB
+				)
+			(SELECT
+				DTSHB.COMP_CD
+				,DTSHB.KEIJO_DT
+				,DTSHB.TENPO_CD
+				,DTSHB.TANPIN_CD
+				,SUM(DTSHB.URIAGE_SOURI_QT)
+				,SUM(DTSHB.URIAGE_SOURI_VL)
+				,SUM(DTSHB.URIAGE_HITEIBAN_QT)
+				,SUM(DTSHB.URIAGE_HITEIBAN_VL)
+				,SUM(DTSHB.NEBIKI_MM_QT)
+				,SUM(DTSHB.NEBIKI_MM_VL)
+				,SUM(DTSHB.LOS_QT)
+				,SUM(DTSHB.LOS_VL)
+				,SUM(DTSHB.NEBIKI_REGI_QT)
+				,SUM(DTSHB.NEBIKI_REGI_VL)
+				,SUM(DTSHB.NEBIKI_SC_QT)
+				,SUM(DTSHB.NEBIKI_SC_VL)
+				,SUM(DTSHB.HAIKI_QT)
+				,SUM(DTSHB.HAIKI_VL)
+				,DTSHB.TEIBAN_TANKA_VL
+				,DTSHB.TOKUBAI_KIKAKU_NO
+				,DTSHB.END_HANBAI_TS
+				,DTSHB.DAIBUNRUI2_CD
+				,DTSHB.BUNRUI1_CD
+				,DTSHB.BUNRUI2_CD
+				,DTSHB.BUNRUI5_CD
+				,DTSHB.HINMEI_KANJI_NA
+				,DTSHB.KIKAKU_KANJI_NA
+				,DTSHB.KIKAKU_KANJI_2_NA
+				,DTSHB.HINMEI_KANA_NA
+				,DTSHB.KIKAKU_KANA_NA
+				,DTSHB.KIKAKU_KANA_2_NA
+				,DTSHB.REC_HINMEI_KANA_NA
+				,DTSHB.TEIKAN_KB
+				,DTSHB.ZEI_KB
+				,DTSHB.TAX_RATE_KB
+				,DTSHB.TAX_RT
+				,DTSHB.MST_BAITANKA_VL
+				,DTSHB.SHIIRE_HANBAI_KB
+				,DTSHB.TANAOROSHI_GENKA_KB
+				,?
+				,?
+				,?
+				,?
+				,SUM(DTSHB.HANBAI_WEIGHT_QT)
+				,DTSHB.DATA_SAKUSEI_DT
+				,SUM(DTSHB.URIAGE_NUKI_SOURI_VL)
+				,SUM(DTSHB.URIAGE_ZEI_VL)
+				,SUM(DTSHB.HENPIN_QT)
+				,SUM(DTSHB.HENPIN_WEIGHT)
+				,SUM(DTSHB.HENPIN_KOMI_VL)
+				,SUM(DTSHB.HENPIN_NUKI_VL)
+				,SUM(DTSHB.HENPIN_ZEI_VL)
+				,DTSHB.URIAGE_KB
+			FROM
+				DT_TANPIN_SEISAN_HMPR_BR DTSHB
+			WHERE
+				DTSHB.DATA_SAKUSEI_DT = ?
+			GROUP BY
+				DTSHB.COMP_CD
+				,DTSHB.KEIJO_DT
+				,DTSHB.TENPO_CD
+				,DTSHB.TANPIN_CD
+				,DTSHB.TEIBAN_TANKA_VL
+				,DTSHB.TOKUBAI_KIKAKU_NO
+				,DTSHB.END_HANBAI_TS
+				,DTSHB.DAIBUNRUI2_CD
+				,DTSHB.BUNRUI1_CD
+				,DTSHB.BUNRUI2_CD
+				,DTSHB.BUNRUI5_CD
+				,DTSHB.HINMEI_KANJI_NA
+				,DTSHB.KIKAKU_KANJI_NA
+				,DTSHB.KIKAKU_KANJI_2_NA
+				,DTSHB.HINMEI_KANA_NA
+				,DTSHB.KIKAKU_KANA_NA
+				,DTSHB.KIKAKU_KANA_2_NA
+				,DTSHB.REC_HINMEI_KANA_NA
+				,DTSHB.TEIKAN_KB
+				,DTSHB.ZEI_KB
+				,DTSHB.TAX_RATE_KB
+				,DTSHB.TAX_RT
+				,DTSHB.MST_BAITANKA_VL
+				,DTSHB.SHIIRE_HANBAI_KB
+				,DTSHB.TANAOROSHI_GENKA_KB
+				,DTSHB.DATA_SAKUSEI_DT
+				,DTSHB.URIAGE_KB
+			)
+		</SQL>
+	</Dao>
+	<!-- 単品精算データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DtTanpinSeisanCreateDao">
+		<!-- <SQL id="insertDtTanpinSeisan">
+			<![CDATA[
+				INSERT
+				INTO DT_TANPIN_SEISAN (
+						COMP_CD
+						, KEIJO_DT
+						, TENPO_CD
+						, TANPIN_CD
+						, URIAGE_SOURI_QT
+						, URIAGE_SOURI_VL
+						, END_HANBAI_TS
+						, DAIBUNRUI2_CD
+						, BUNRUI1_CD
+						, BUNRUI2_CD
+						, BUNRUI5_CD
+						, HINMEI_KANJI_NA
+						, KIKAKU_KANJI_NA
+						, KIKAKU_KANJI_2_NA
+						, HINMEI_KANA_NA
+						, TEIKAN_KB
+						, ZEI_KB
+						, TAX_RATE_KB
+						, TAX_RT
+						, MST_BAITANKA_VL
+						, SHIIRE_HANBAI_KB
+						, TANAOROSHI_GENKA_KB
+						, INSERT_USER_ID
+						, INSERT_TS
+						, UPDATE_USER_ID
+						, UPDATE_TS
+						, HANBAI_WEIGHT_QT
+						, DATA_SAKUSEI_DT
+						, URIAGE_NUKI_SOURI_VL
+						, URIAGE_ZEI_VL
+						, HENPIN_QT
+						, HENPIN_WEIGHT
+						, HENPIN_KOMI_VL
+						, HENPIN_NUKI_VL
+						, HENPIN_ZEI_VL
+						, URIAGE_KB
+				)
+				SELECT
+						H.COMP_CD
+						, H.SYUKA_DT
+						, H.SYUKA_TENPO_CD
+						, M.SYOHIN_CD
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN NVL(M.NOUHIN_SURYO_QT, 0)
+										WHEN '02' THEN 0
+										END
+						) URIAGE_SOURI_QT
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN NVL(M.BAIKA_ZEIKOMI_VL, 0)
+										WHEN '02' THEN 0
+										END
+						) URIAGE_SOURI_VL
+						, '00' END_HANBAI_TS
+						, MIN(T.DAIBUNRUI2_CD) DAIBUNRUI2_CD
+						, MIN(NVL(M.BUNRUI1_CD, T.BUNRUI1_CD)) BUNRUI1_CD
+						, MIN(M.BUNRUI2_CD) BUNRUI2_CD
+						, MIN(M.BUNRUI5_CD) BUNRUI5_CD
+						, MIN(M.HINMEI_KANJI_NA) HINMEI_KANJI_NA
+						, MIN(M.KIKAKU_KANJI_NA) KIKAKU_KANJI_NA
+						, MIN(M.KIKAKU_KANJI_2_NA) KIKAKU_KANJI_2_NA
+						, MIN(M.HINMEI_KANA_NA) HINMEI_KANA_NA
+						, MIN(M.TEIKAN_KB) TEIKAN_KB
+						, MIN(M.OROSHI_ZEI_KB) OROSHI_ZEI_KB
+						, MIN(NVL(HAN.TAX_RATE_KB, S.TAX_RATE_KB)) TAX_RATE_KB
+						, MIN(M.OROSHI_TAX_RT) OROSHI_TAX_RT
+						, MIN(NVL(M.M_OROSHI_BAITANKA_VL, 0)) M_OROSHI_BAITANKA_VL
+						, MIN(NVL(HAN.SHIIRE_HANBAI_KB, S.SHIIRE_HANBAI_KB)) SHIIRE_HANBAI_KB
+						, MIN(B.TANAOROSHI_GENKA_KB) TANAOROSHI_GENKA_KB
+						, ? INSERT_USER_ID
+						, ? INSERT_TS
+						, ? UPDATE_USER_ID
+						, ? UPDATE_TS
+						, SUM(
+								CASE H.DENPYO_KB
+										/** #4498 Mod X.Liu 2017.03.31 (S)*/
+										/** WHEN '01' THEN NVL(M.NOUHIN_JYURYO_QT, 0) */
+										WHEN '01' THEN NVL(M.NOUHIN_JYURYO_QT*1000, 0)
+										/** #4498 Mod X.Liu 2017.03.31 (E)*/
+										WHEN '02' THEN 0
+										END
+						) HANBAI_WEIGHT_QT
+						, ? DATA_SAKUSEI_DT
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN NVL(M.BAIKA_ZEINUKI_VL, 0)
+										WHEN '02' THEN 0
+										END
+						) URIAGE_NUKI_SOURI_VL
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN NVL(M.BAIKA_ZEIGAKU_VL, 0)
+										WHEN '02' THEN 0
+										END
+						) URIAGE_ZEI_VL
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN 0
+										WHEN '02' THEN NVL(M.NOUHIN_SURYO_QT, 0)
+										END
+						) HENPIN_QT
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN 0
+										/** #4498 Mod X.Liu 2017.03.31 (S)*/
+										/** WHEN '02' THEN NVL(M.NOUHIN_JYURYO_QT, 0) */
+										WHEN '02' THEN NVL(M.NOUHIN_JYURYO_QT*1000, 0)
+										/** #4498 Mod X.Liu 2017.03.31 (E)*/
+										END
+						) HENPIN_WEIGHT
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN 0
+										WHEN '02' THEN NVL(M.BAIKA_ZEIKOMI_VL, 0)
+										END
+						) HENPIN_KOMI_VL
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN 0
+										WHEN '02' THEN NVL(M.BAIKA_ZEINUKI_VL, 0)
+										END
+						) HENPIN_NUKI_VL
+						, SUM(
+								CASE H.DENPYO_KB
+										WHEN '01' THEN 0
+										WHEN '02' THEN NVL(M.BAIKA_ZEIGAKU_VL, 0)
+										END
+						) HENPIN_ZEI_VL
+						, '3' URIAGE_KB
+				FROM
+						/* #4389 X.Liu Mod 2017.04.04 (S)*/
+						/* DT_OROSHI_SYUKA_DENPYO H
+						INNER JOIN DT_OROSHI_SYUKA_MEI M */
+						WK_OROSHI_SYUKA_DENPYO H
+						INNER JOIN WK_OROSHI_SYUKA_MEI M
+						/* #4389 X.Liu Mod 2017.04.04 (E)*/
+								ON H.COMP_CD = M.COMP_CD
+								AND H.SEQ_NB = M.SEQ_NB
+								AND M.DELETE_FG = '0'
+						LEFT OUTER JOIN (
+								SELECT
+										T1.COMP_CD
+										, T1.BUNRUI5_CD
+										, T1.BUNRUI1_CD
+										, T1.DAIBUNRUI2_CD
+								FROM
+										R_FI_SYOHIN_TAIKEI T1
+								WHERE
+										T1.COMP_CD = ?
+										AND T1.YUKO_DT = (
+												SELECT
+														MAX(T2.YUKO_DT)
+												FROM
+														R_FI_SYOHIN_TAIKEI T2
+												WHERE
+														T2.COMP_CD = T1.COMP_CD
+														AND T2.BUNRUI5_CD = T1.BUNRUI5_CD
+														AND T2.YUKO_DT <= ?
+										)
+						) T
+								ON T.COMP_CD = M.COMP_CD
+								AND T.BUNRUI5_CD = M.BUNRUI5_CD
+						LEFT OUTER JOIN (
+								SELECT
+										HAN1.COMP_CD
+										, HAN1.TENPO_CD
+										, HAN1.SYOHIN_CD
+										, HAN1.TAX_RATE_KB
+										, HAN1.SHIIRE_HANBAI_KB
+								FROM
+										R_FI_HANBAI HAN1
+								WHERE
+										HAN1.COMP_CD = ?
+										AND HAN1.TEKIYO_START_DT = (
+												SELECT
+														MAX(HAN2.TEKIYO_START_DT)
+												FROM
+														R_FI_HANBAI HAN2
+												WHERE
+														HAN2.COMP_CD = HAN1.COMP_CD
+														AND HAN2.TENPO_CD = HAN1.TENPO_CD
+														AND HAN2.SYOHIN_CD = HAN1.SYOHIN_CD
+														AND HAN2.TEKIYO_START_DT <= ?
+										)
+						) HAN
+								ON HAN.COMP_CD = H.COMP_CD
+								AND HAN.TENPO_CD = H.SYUKA_TENPO_CD
+								AND HAN.SYOHIN_CD = M.SYOHIN_CD
+						LEFT OUTER JOIN (
+								SELECT
+										S1.COMP_CD
+										, S1.SYOHIN_CD
+										, S1.TAX_RATE_KB
+										, S1.SHIIRE_HANBAI_KB
+								FROM
+										R_FI_SYOHIN S1
+								WHERE
+										S1.COMP_CD = ?
+										AND S1.YUKO_DT = (
+												SELECT
+														MAX(S2.YUKO_DT)
+												FROM
+														R_FI_SYOHIN S2
+												WHERE
+														S2.COMP_CD = S1.COMP_CD
+														AND S2.SYOHIN_CD = S1.SYOHIN_CD
+														AND S2.YUKO_DT <= ?
+										)
+						) S
+								ON S.COMP_CD = M.COMP_CD
+								AND S.SYOHIN_CD = M.SYOHIN_CD
+						LEFT OUTER JOIN (
+								SELECT
+										B1.COMP_CD
+										, B1.TENPO_CD
+										, B1.BUNRUI1_CD
+										, B1.TANAOROSHI_GENKA_KB
+								FROM
+										R_FI_TENPO_BUNRUI1 B1
+								WHERE
+										B1.COMP_CD = ?
+										AND B1.YUKO_DT = (
+												SELECT
+														MAX(B2.YUKO_DT)
+												FROM
+														R_FI_TENPO_BUNRUI1 B2
+												WHERE
+														B2.COMP_CD = B1.COMP_CD
+														AND B2.TENPO_CD = B1.TENPO_CD
+														AND B2.BUNRUI1_CD = B1.BUNRUI1_CD
+														AND B2.YUKO_DT <= ?
+										)
+						) B
+								ON B.COMP_CD = H.COMP_CD
+								AND B.TENPO_CD = H.SYUKA_TENPO_CD
+								AND B.BUNRUI1_CD = NVL(M.BUNRUI1_CD, T.BUNRUI1_CD)
+				WHERE
+						H.COMP_CD = ?
+						/* #4389 X.Liu Del 2017.04.04 (S) */
+						/*AND H.DENPYO_KAKUTEI_DT = ?
+						AND H.DELETE_FG = '0'*/
+						/* #4389 X.Liu Del 2017.04.04 (E) */
+				GROUP BY
+						H.COMP_CD
+						, H.SYUKA_DT
+						, H.SYUKA_TENPO_CD
+						, M.SYOHIN_CD
+			]]>
+		</SQL>
+		 -->
+		 <SQL id="insertDtTanpinSeisan">
+			<![CDATA[
+			MERGE 
+			INTO DT_TANPIN_SEISAN DTS 
+			  USING ( 
+			SELECT
+			  H.COMP_CD
+			  , H.SYUKA_DT KEIJO_DT
+			  , H.SYUKA_TENPO_CD TENPO_CD
+			  , M.SYOHIN_CD TANPIN_CD
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN NVL(M.NOUHIN_SURYO_QT, 0) 
+			      WHEN '02' THEN 0 
+			      END
+			  ) URIAGE_SOURI_QT
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN NVL(M.BAIKA_ZEIKOMI_VL, 0) 
+			      WHEN '02' THEN 0 
+			      END
+			  ) URIAGE_SOURI_VL
+			  , '00' END_HANBAI_TS
+			  , MIN(T.DAIBUNRUI2_CD) DAIBUNRUI2_CD
+			  , MIN(NVL(M.BUNRUI1_CD, T.BUNRUI1_CD)) BUNRUI1_CD
+			  , MIN(M.BUNRUI2_CD) BUNRUI2_CD
+			  , MIN(M.BUNRUI5_CD) BUNRUI5_CD
+			  , MIN(M.HINMEI_KANJI_NA) HINMEI_KANJI_NA
+			  , MIN(M.KIKAKU_KANJI_NA) KIKAKU_KANJI_NA
+			  , MIN(M.KIKAKU_KANJI_2_NA) KIKAKU_KANJI_2_NA
+			  , MIN(M.HINMEI_KANA_NA) HINMEI_KANA_NA
+			  , MIN(M.TEIKAN_KB) TEIKAN_KB
+			  , MIN(M.OROSHI_ZEI_KB) ZEI_KB
+			  , MIN(NVL(HAN.TAX_RATE_KB, S.TAX_RATE_KB)) TAX_RATE_KB
+			  , MIN(M.OROSHI_TAX_RT) TAX_RT
+			  , MIN(NVL(M.M_OROSHI_BAITANKA_VL, 0)) MST_BAITANKA_VL
+			  , MIN(NVL(HAN.SHIIRE_HANBAI_KB, S.SHIIRE_HANBAI_KB)) SHIIRE_HANBAI_KB
+			  , MIN(B.TANAOROSHI_GENKA_KB) TANAOROSHI_GENKA_KB
+			  , ? INSERT_USER_ID
+			  , ? INSERT_TS
+			  , ? UPDATE_USER_ID
+			  , ? UPDATE_TS
+			  , SUM( 
+			    CASE H.DENPYO_KB
+			      WHEN '01' THEN NVL(M.NOUHIN_JYURYO_QT * 1000, 0)
+			      WHEN '02' THEN 0 
+			      END
+			  ) HANBAI_WEIGHT_QT
+			  , ? DATA_SAKUSEI_DT
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN NVL(M.BAIKA_ZEINUKI_VL, 0) 
+			      WHEN '02' THEN 0 
+			      END
+			  ) URIAGE_NUKI_SOURI_VL
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN NVL(M.BAIKA_ZEIGAKU_VL, 0) 
+			      WHEN '02' THEN 0 
+			      END
+			  ) URIAGE_ZEI_VL
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN 0 
+			      WHEN '02' THEN NVL(M.NOUHIN_SURYO_QT, 0) 
+			      END
+			  ) HENPIN_QT
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN 0 
+			      WHEN '02' THEN NVL(M.NOUHIN_JYURYO_QT * 1000, 0)
+			      END
+			  ) HENPIN_WEIGHT
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN 0 
+			      WHEN '02' THEN NVL(M.BAIKA_ZEIKOMI_VL, 0) 
+			      END
+			  ) HENPIN_KOMI_VL
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN 0 
+			      WHEN '02' THEN NVL(M.BAIKA_ZEINUKI_VL, 0) 
+			      END
+			  ) HENPIN_NUKI_VL
+			  , SUM( 
+			    CASE H.DENPYO_KB 
+			      WHEN '01' THEN 0 
+			      WHEN '02' THEN NVL(M.BAIKA_ZEIGAKU_VL, 0) 
+			      END
+			  ) HENPIN_ZEI_VL
+			  , '3' URIAGE_KB 
+			FROM
+			  WK_OROSHI_SYUKA_DENPYO H 
+			  INNER JOIN WK_OROSHI_SYUKA_MEI M 
+			    ON H.COMP_CD = M.COMP_CD 
+			    AND H.SEQ_NB = M.SEQ_NB 
+			    AND M.DELETE_FG = '0' 
+			  LEFT OUTER JOIN ( 
+			    SELECT
+			      T1.COMP_CD
+			      , T1.BUNRUI5_CD
+			      , T1.BUNRUI1_CD
+			      , T1.DAIBUNRUI2_CD 
+			    FROM
+			      R_FI_SYOHIN_TAIKEI T1 
+			    WHERE
+			      T1.COMP_CD = ? 
+			      AND T1.YUKO_DT = ( 
+			        SELECT
+			          MAX(T2.YUKO_DT) 
+			        FROM
+			          R_FI_SYOHIN_TAIKEI T2 
+			        WHERE
+			          T2.COMP_CD = T1.COMP_CD 
+			          AND T2.BUNRUI5_CD = T1.BUNRUI5_CD 
+			          AND T2.YUKO_DT <= ?
+			      )
+			  ) T 
+			    ON T.COMP_CD = M.COMP_CD 
+			    AND T.BUNRUI5_CD = M.BUNRUI5_CD 
+			  LEFT OUTER JOIN ( 
+			    SELECT
+			      HAN1.COMP_CD
+			      , HAN1.TENPO_CD
+			      , HAN1.SYOHIN_CD
+			      , HAN1.TAX_RATE_KB
+			      , HAN1.SHIIRE_HANBAI_KB 
+			    FROM
+			      R_FI_HANBAI HAN1 
+			    WHERE
+			      HAN1.COMP_CD = ? 
+			      AND HAN1.TEKIYO_START_DT = ( 
+			        SELECT
+			          MAX(HAN2.TEKIYO_START_DT) 
+			        FROM
+			          R_FI_HANBAI HAN2 
+			        WHERE
+			          HAN2.COMP_CD = HAN1.COMP_CD 
+			          AND HAN2.TENPO_CD = HAN1.TENPO_CD 
+			          AND HAN2.SYOHIN_CD = HAN1.SYOHIN_CD 
+			          AND HAN2.TEKIYO_START_DT <= ?
+			      )
+			  ) HAN 
+			    ON HAN.COMP_CD = H.COMP_CD 
+			    AND HAN.TENPO_CD = H.SYUKA_TENPO_CD 
+			    AND HAN.SYOHIN_CD = M.SYOHIN_CD 
+			  LEFT OUTER JOIN ( 
+			    SELECT
+			      S1.COMP_CD
+			      , S1.SYOHIN_CD
+			      , S1.TAX_RATE_KB
+			      , S1.SHIIRE_HANBAI_KB 
+			    FROM
+			      R_FI_SYOHIN S1 
+			    WHERE
+			      S1.COMP_CD = ? 
+			      AND S1.YUKO_DT = ( 
+			        SELECT
+			          MAX(S2.YUKO_DT) 
+			        FROM
+			          R_FI_SYOHIN S2 
+			        WHERE
+			          S2.COMP_CD = S1.COMP_CD 
+			          AND S2.SYOHIN_CD = S1.SYOHIN_CD 
+			          AND S2.YUKO_DT <= ?
+			      )
+			  ) S 
+			    ON S.COMP_CD = M.COMP_CD 
+			    AND S.SYOHIN_CD = M.SYOHIN_CD 
+			  LEFT OUTER JOIN ( 
+			    SELECT
+			      B1.COMP_CD
+			      , B1.TENPO_CD
+			      , B1.BUNRUI1_CD
+			      , B1.TANAOROSHI_GENKA_KB 
+			    FROM
+			      R_FI_TENPO_BUNRUI1 B1 
+			    WHERE
+			      B1.COMP_CD = ? 
+			      AND B1.YUKO_DT = ( 
+			        SELECT
+			          MAX(B2.YUKO_DT) 
+			        FROM
+			          R_FI_TENPO_BUNRUI1 B2 
+			        WHERE
+			          B2.COMP_CD = B1.COMP_CD 
+			          AND B2.TENPO_CD = B1.TENPO_CD 
+			          AND B2.BUNRUI1_CD = B1.BUNRUI1_CD 
+			          AND B2.YUKO_DT <= ?
+			      )
+			  ) B 
+			    ON B.COMP_CD = H.COMP_CD 
+			    AND B.TENPO_CD = H.SYUKA_TENPO_CD 
+			    AND B.BUNRUI1_CD = NVL(M.BUNRUI1_CD, T.BUNRUI1_CD) 
+			WHERE
+			  H.COMP_CD = ?
+			GROUP BY
+			  H.COMP_CD
+			  , H.SYUKA_DT
+			  , H.SYUKA_TENPO_CD
+			  , M.SYOHIN_CD
+			  ) WOSD
+			    ON ( 
+			       DTS.COMP_CD = WOSD.COMP_CD
+			    AND DTS.KEIJO_DT = WOSD.KEIJO_DT
+			    AND DTS.TENPO_CD = WOSD.TENPO_CD
+			    AND DTS.TANPIN_CD = WOSD.TANPIN_CD
+			    AND DTS.URIAGE_KB = WOSD.URIAGE_KB
+			    AND DTS.DATA_SAKUSEI_DT = WOSD.DATA_SAKUSEI_DT
+			    ) WHEN MATCHED THEN UPDATE 
+			SET
+			    URIAGE_SOURI_QT = NVL(DTS.URIAGE_SOURI_QT,0) + NVL(WOSD.URIAGE_SOURI_QT,0)
+			  , URIAGE_SOURI_VL = NVL(DTS.URIAGE_SOURI_VL,0) + NVL(WOSD.URIAGE_SOURI_VL,0)
+			  , HANBAI_WEIGHT_QT = NVL(DTS.HANBAI_WEIGHT_QT,0) + NVL(WOSD.HANBAI_WEIGHT_QT,0)
+			  , URIAGE_NUKI_SOURI_VL = NVL(DTS.URIAGE_NUKI_SOURI_VL,0) + NVL(WOSD.URIAGE_NUKI_SOURI_VL,0)
+			  , URIAGE_ZEI_VL = NVL(DTS.URIAGE_ZEI_VL,0) + NVL(WOSD.URIAGE_ZEI_VL,0)
+			  , HENPIN_QT = NVL(DTS.HENPIN_QT,0) + NVL(WOSD.HENPIN_QT,0)
+			  , HENPIN_WEIGHT = NVL(DTS.HENPIN_WEIGHT,0) + NVL(WOSD.HENPIN_WEIGHT,0)
+			  , HENPIN_KOMI_VL = NVL(DTS.HENPIN_KOMI_VL,0) + NVL(WOSD.HENPIN_KOMI_VL,0)
+			  , HENPIN_NUKI_VL = NVL(DTS.HENPIN_NUKI_VL,0) + NVL(WOSD.HENPIN_NUKI_VL,0)
+			  , HENPIN_ZEI_VL = NVL(DTS.HENPIN_ZEI_VL,0) + NVL(WOSD.HENPIN_ZEI_VL,0)
+			  , UPDATE_USER_ID = WOSD.UPDATE_USER_ID
+			  , UPDATE_TS = WOSD.UPDATE_TS
+			  WHEN NOT MATCHED THEN 
+				INSERT (
+						COMP_CD
+						, KEIJO_DT
+						, TENPO_CD
+						, TANPIN_CD
+						, URIAGE_SOURI_QT
+						, URIAGE_SOURI_VL
+						, END_HANBAI_TS
+						, DAIBUNRUI2_CD
+						, BUNRUI1_CD
+						, BUNRUI2_CD
+						, BUNRUI5_CD
+						, HINMEI_KANJI_NA
+						, KIKAKU_KANJI_NA
+						, KIKAKU_KANJI_2_NA
+						, HINMEI_KANA_NA
+						, TEIKAN_KB
+						, ZEI_KB
+						, TAX_RATE_KB
+						, TAX_RT
+						, MST_BAITANKA_VL
+						, SHIIRE_HANBAI_KB
+						, TANAOROSHI_GENKA_KB
+						, INSERT_USER_ID
+						, INSERT_TS
+						, UPDATE_USER_ID
+						, UPDATE_TS
+						, HANBAI_WEIGHT_QT
+						, DATA_SAKUSEI_DT
+						, URIAGE_NUKI_SOURI_VL
+						, URIAGE_ZEI_VL
+						, HENPIN_QT
+						, HENPIN_WEIGHT
+						, HENPIN_KOMI_VL
+						, HENPIN_NUKI_VL
+						, HENPIN_ZEI_VL
+						, URIAGE_KB
+				)	VALUES ( 
+					    WOSD.COMP_CD
+					  , WOSD.KEIJO_DT
+					  , WOSD.TENPO_CD
+					  , WOSD.TANPIN_CD
+					  , WOSD.URIAGE_SOURI_QT
+					  , WOSD.URIAGE_SOURI_VL
+					  , WOSD.END_HANBAI_TS
+					  , WOSD.DAIBUNRUI2_CD
+					  , WOSD.BUNRUI1_CD
+					  , WOSD.BUNRUI2_CD
+					  , WOSD.BUNRUI5_CD
+					  , WOSD.HINMEI_KANJI_NA
+					  , WOSD.KIKAKU_KANJI_NA
+					  , WOSD.KIKAKU_KANJI_2_NA
+					  , WOSD.HINMEI_KANA_NA
+					  , WOSD.TEIKAN_KB
+					  , WOSD.ZEI_KB
+					  , WOSD.TAX_RATE_KB
+					  , WOSD.TAX_RT
+					  , WOSD.MST_BAITANKA_VL
+					  , WOSD.SHIIRE_HANBAI_KB
+					  , WOSD.TANAOROSHI_GENKA_KB
+					  , WOSD.INSERT_USER_ID
+					  , WOSD.INSERT_TS
+					  , WOSD.UPDATE_USER_ID
+					  , WOSD.UPDATE_TS
+					  , WOSD.HANBAI_WEIGHT_QT
+					  , WOSD.DATA_SAKUSEI_DT
+					  , WOSD.URIAGE_NUKI_SOURI_VL
+					  , WOSD.URIAGE_ZEI_VL
+					  , WOSD.HENPIN_QT
+					  , WOSD.HENPIN_WEIGHT
+					  , WOSD.HENPIN_KOMI_VL
+					  , WOSD.HENPIN_NUKI_VL
+					  , WOSD.HENPIN_ZEI_VL
+					  , WOSD.URIAGE_KB
+					  )
+			]]>
+		</SQL> 
+	</Dao>
+	<!-- 売上INVOICE作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.UriageInvoiceCreateDao">
+		<SQL id="insertWkUriageInvoiceKanriH">
+			<![CDATA[
+				INSERT INTO WK_URIAGE_INVOICE_KANRI_H
+				/* #5668 Add X.Liu 2017.07.26 (S) */
+				( 
+				  COMMAND_CD
+				  , TENPO_CD
+				  , REGI_RB
+				  , TERMINAL_RB
+				  , EIGYO_DT
+				  , SALES_TS
+				  , ZEINUKI_VL
+				  , TAX_VL
+				  , ZEIKOMI_VL
+				  , MEMBER_ID
+				  , INVOICE_NB
+				  , INVOICE_KB
+				  , INVOICE_RB
+				  , OLD_TENPO_CD
+				  , TENPO_NA
+				  , CASHIER_CD
+				  , USER_NA
+				  , SHIHARAI_SYUBETSU_CD
+				  , SHIHARAI_SYUBETSU_SUB_CD
+				  , HAKOU_DT
+				  , INSERT_USER_ID
+				  , INSERT_TS
+				  , UPDATE_USER_ID
+				  , UPDATE_TS
+				  , DELETE_FG
+				  , KOJIN_NA
+				  , KONYU_SYA
+				  , KAISYA_ZEI_CD
+				  , JYUSYO
+				  , SHIHARAI_HOUHOU
+				  , KOZA_NO
+				  , ZEINUKI_TOT_16IKOU_VL
+				  , RECEIPT_DISCOUNT_TOT_VL
+				  , VAT_5_VL
+				  , VAT_10_VL
+				  , HIKAZEI_TOT_VL
+				  , ZEIKOMI_TOT_0_VL
+				  , ZEIKOMI_TOT_5_VL
+				  , ZEIKOMI_TOT_10_VL
+				  , VAT_PRINT_KB
+				  , UPDATE_FG
+				  , CREDIT_NA
+				  , INVOICE_AUTO_NB
+				  , INVOICE_AUTO_KB
+				  , INVOICE_AUTO_RB
+				  , VAT_AUTO_DT
+				  , RECEIPT_NO
+				  , RECEIPT_SUB_NO
+				  , MIHAKO_KB
+				  , ZEIMU_MEISAI_QT
+				  , ZEIMU_ZEINUKI_VL
+				  , ZEIMU_ZEIKOMI_VL
+				  , BETSU_SYS_DATA_KB
+				  , BETSU_SYS_VAT_PRINT_KB
+				) 
+				/* #5668 Add X.Liu 2017.07.26 (E) */
+				SELECT
+					'0000' COMMAND_CD
+					, SD.SYUKA_TENPO_CD
+					, SUBSTR(SD.DENPYO_NO, 1, 3) REGI_RB
+					, SUBSTR(SD.DENPYO_NO, 4) TERMINAL_RB
+					, SD.SYUKA_DT
+					, '0000' SALES_TS
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SD.SUMBAIKA_ZEINUKI_VL, 0) * - 1
+					  ELSE NVL(SD.SUMBAIKA_ZEINUKI_VL, 0) 
+					  END SUMBAIKA_ZEINUKI_VL
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SD.SUMBAIKA_ZEIGAKU_VL, 0) * - 1
+					  ELSE NVL(SD.SUMBAIKA_ZEIGAKU_VL, 0)
+					  END SUMBAIKA_ZEIGAKU_VL
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SD.SUMBAIKA_ZEIKOMI_VL, 0) * - 1 
+					  ELSE NVL(SD.SUMBAIKA_ZEIKOMI_VL, 0)
+					  END SUMBAIKA_ZEIKOMI_VL
+					, NULL
+					, SD.INVOICE_KEYINNO_NB
+					, SD.INVOICE_KEYINNO_KB
+					, SD.INVOICE_KEYINNO_RB
+					, HT.OLD_TENPO_CD
+					, RT.KANJI_NA
+					, NULL CASHIER_CD
+					, NULL USER_NA
+					, NULL SHIHARAI_SYUBETSU_CD
+					, NULL SHIHARAI_SYUBETSU_SUB_CD
+					, SD.INVOICE_KEYINNO_HAKOU_DT
+					, ? INSERT_USER_ID
+					, ? INSERT_TS
+					, ? UPDATE_USER_ID
+					, ? UPDATE_TS
+					, '0' DELETE_FG
+					/** #4500 X.Liu Mod 2017.03.31 (S) */ 
+					/**, NULL KOJIN_NA 
+					, KK.KOKYAKU_2_NA || KK.KOKYAKU_3_NA || KK.KOKYAKU_4_NA KONYU_SYA 
+					, KK.VAT_TOROKU_NB KAISYA_ZEI_CD 
+					, KK.ADDRESS_1_TX || KK.ADDRESS_2_TX JYUSYO 
+					, NULL SHIHARAI_HOUHOU 
+					, NULL KOZA_NO*/ 
+					/* #5754 Mod X.Liu 2017.08.03 (S) */
+					/*, SD.PERSONAL_NAME KOJIN_NA */ 
+					/*, SD.CUSTOMER_NAME KONYU_SYA */
+					/*, SD.VAT_CODE KAISYA_ZEI_CD*/ 
+					/*, SD.ADDRESS JYUSYO*/ 
+					/*, SD.SHIHARAI_HOHO SHIHARAI_HOUHOU*/ 
+					/*, SD.KOZA_NB KOZA_NO*/
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.PERSONAL_NAME END AS KOJIN_NA
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.CUSTOMER_NAME END AS KONYU_SYA
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.VAT_CODE END AS KAISYA_ZEI_CD
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.ADDRESS END AS JYUSYO
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.SHIHARAI_HOHO END AS SHIHARAI_HOUHOU
+					,CASE WHEN SD.DENPYO_KB = '01' AND  SD.DENPYO_PRINT_QT = 0 THEN NULL
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN NULL
+					ELSE SD.KOZA_NB END AS KOZA_NO
+					/* #5754 Mod X.Liu 2017.08.03 (E) */
+					/** #4500 X.Liu Mod 2017.03.31 (E) */ 
+					, 0 ZEINUKI_TOT_16IKOU_VL
+					, 0 RECEIPT_DISCOUNT_TOT_VL
+					, 0 VAT_5_VL
+					, 0 VAT_10_VL
+					, 0 HIKAZEI_TOT_VL
+					, 0 ZEIKOMI_TOT_0_VL
+					, 0 ZEIKOMI_TOT_5_VL
+					, 0 ZEIKOMI_TOT_10_VL
+					/* #5668 Mod X.Liu 2017.07.26 (S) */
+					/*, CASE SD.DENPYO_KB
+						  WHEN '01' THEN '4'
+						            ELSE '8'
+					  END VAT_PRINT_KB */
+  					/* #5754 Mod X.Liu 2017.08.03 (S) */
+					/* , CASE WHEN (SD.DENPYO_KB = '02' */
+					/* AND (TRIM(SD.INVOICE_KEYINNO_NB) = '' OR SD.INVOICE_KEYINNO_NB IS NULL) */
+					/* AND (TRIM(SD.INVOICE_KEYINNO_KB) = '' OR SD.INVOICE_KEYINNO_KB IS NULL) */
+					/* AND (TRIM(SD.INVOICE_KEYINNO_RB) = '' OR SD.INVOICE_KEYINNO_RB IS NULL) */
+					/* ) THEN '8' ELSE '9' END AS VAT_PRINT_KB */
+					, CASE WHEN SD.DENPYO_KB = '01' AND SD.DENPYO_PRINT_QT > 0 THEN '9'
+					WHEN SD.DENPYO_KB = '01' AND SD.DENPYO_PRINT_QT = 0 THEN '0'
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT > 0 AND SD.URI_VAT_KB IS NULL THEN '9'
+					WHEN SD.DENPYO_KB = '02' AND SD.DENPYO_PRINT_QT = 0 AND SD.URI_VAT_KB IS NULL THEN '0'
+					ELSE '8' END AS VAT_PRINT_KB   
+					/* #5754 Mod X.Liu 2017.08.03 (E) */
+					/* #5668 Mod X.Liu 2017.07.26 (E) */
+					, '0' UPDATE_FG
+					, NULL CREDIT_NA
+					, INVOICE_AUTONO_NB
+					, INVOICE_AUTONO_KB
+					, INVOICE_AUTONO_RB
+					, INVOICE_AUTONO_HAKOU_DT
+					, SD.CYOHYO_DENPYO_NO
+					/* #4768 Add X.Liu 2017.04.18 (S) */
+					, 0 RECEIPT_SUB_NO
+					, '0' MIHAKO_KB
+					/* #4768 Add X.Liu 2017.04.18 (E) */
+					/* #5149 Add X.Liu 2017.05.25 (S) */
+					, NVL(MC.CNT,0) ZEIMU_MEISAI_QT 
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SD.SUMBAIKA_ZEINUKI_VL, 0) * - 1
+					  ELSE NVL(SD.SUMBAIKA_ZEINUKI_VL, 0) 
+					  END ZEIMU_ZEINUKI_VL
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SD.SUMBAIKA_ZEIKOMI_VL, 0) * - 1 
+					  ELSE NVL(SD.SUMBAIKA_ZEIKOMI_VL, 0)
+					  END ZEIMU_ZEIKOMI_VL
+					 /* #5149 Add X.Liu 2017.05.25 (E) */
+					 /* #5668 Add X.Liu 2017.07.26 (S) */
+					 ,CASE WHEN SD.DENPYO_KB = '01' THEN '4'
+					 ELSE '8' END AS BETSU_SYS_DATA_KB
+					 ,CASE WHEN (SD.DENPYO_KB = '02' 
+					 AND (TRIM(SD.INVOICE_KEYINNO_NB) = '' OR SD.INVOICE_KEYINNO_NB IS NULL )
+					 AND (TRIM(SD.INVOICE_KEYINNO_KB) = '' OR SD.INVOICE_KEYINNO_KB IS NULL )
+					 AND (TRIM(SD.INVOICE_KEYINNO_RB) = '' OR SD.INVOICE_KEYINNO_RB IS NULL )
+					 ) THEN '0' ELSE '1' END AS BETSU_SYS_VAT_PRINT_KB
+					 /* #5668 Add X.Liu 2017.07.26 (E) */
+				FROM
+					/* #4389 Mod X.Liu 2017.04.04 (S) */
+					/*DT_OROSHI_SYUKA_DENPYO SD*/
+					WK_OROSHI_SYUKA_DENPYO SD
+					/* #4389 Mod X.Liu 2017.04.04 (E) */
+					LEFT OUTER JOIN H_R_TENPO HT
+						ON HT.TENPO_CD = SD.SYUKA_TENPO_CD
+					LEFT OUTER JOIN R_TENPO RT
+						ON RT.TENPO_CD = SD.SYUKA_TENPO_CD
+					/** #4500 X.Liu Del 2017.03.31 (S) */ 
+					/**LEFT OUTER JOIN ( 
+						SELECT 
+							KK1.KOKYAKU_KB 
+							, KK1.KOKYAKU_CD 
+							, KK1.KOKYAKU_2_NA 
+							, KK1.KOKYAKU_3_NA 
+							, KK1.KOKYAKU_4_NA 
+							, KK1.ADDRESS_1_TX 
+							, KK1.ADDRESS_2_TX 
+							, KK1.VAT_TOROKU_NB 
+						FROM 
+							R_KOKYAKU_KIHON KK1 
+						WHERE 
+							KK1.KOKYAKU_KB = '0' 
+							AND KK1.YUKO_START_DT = ( 
+								SELECT 
+									MAX(KK2.YUKO_START_DT) 
+								FROM 
+									R_KOKYAKU_KIHON KK2 
+								WHERE 
+									KK2.KOKYAKU_KB = '0' 
+									AND KK2.KOKYAKU_CD = KK1.KOKYAKU_CD 
+									AND KK2.YUKO_START_DT <= ? 
+							) 
+					) KK 
+						ON KK.KOKYAKU_KB = '0' 
+						AND KK.KOKYAKU_CD = SD.SEIKYUSAKI_CD */ 
+					/** #4500 X.Liu Del 2017.03.31 (E) */ 
+					/*#5149 Add X.Liu 2017.05.25 (S)*/
+					LEFT JOIN (
+						SELECT
+						  COMMAND_CD
+						  , TENPO_CD
+						  , REGI_RB
+						  , TERMINAL_RB
+						  , EIGYO_DT
+						  , COUNT(COMMAND_CD) AS CNT 
+						FROM
+						  WK_URIAGE_INVOICE_KANRI_M 
+						GROUP BY
+						  COMMAND_CD
+						  , TENPO_CD
+						  , REGI_RB
+						  , TERMINAL_RB
+						  , EIGYO_DT
+					) MC
+					ON  '0000' = MC.COMMAND_CD
+					AND SD.SYUKA_TENPO_CD = MC.TENPO_CD
+					AND SUBSTR(SD.DENPYO_NO, 1, 3) = MC.REGI_RB
+					AND SUBSTR(SD.DENPYO_NO, 4) = MC.TERMINAL_RB
+					AND SD.SYUKA_DT = MC.EIGYO_DT 
+					/*#5149 Add X.Liu 2017.05.25 (E)*/
+				WHERE
+					SD.COMP_CD = ?
+					/* #4389 X.Liu Del 2017.04.04 (S) */
+					/*AND SD.DENPYO_KAKUTEI_DT = ?
+					AND SD.DELETE_FG = '0'*/
+					/* #4389 X.Liu Del 2017.04.04 (E) */
+			]]>
+		</SQL>
+		<SQL id="insertWkUriageInvoiceKanriM">
+			<![CDATA[
+				INSERT INTO WK_URIAGE_INVOICE_KANRI_M
+				/* #5900 Add X.Liu 2017.09.11 (S) */
+				( 
+				  COMMAND_CD
+				  , TENPO_CD
+				  , REGI_RB
+				  , TERMINAL_RB
+				  , EIGYO_DT
+				  , SEQ_RB
+				  , SALES_TYPE
+				  , SYOHIN_CD
+				  , SURYO_QT
+				  , BAITANKA_VL
+				  , ZEINUKI_VL
+				  , TAX_RT
+				  , ZEIGAKU_VL
+				  , ZEIKOMI_VL
+				  , OLD_SYOHIN_CD
+				  , SYOHIN_NA
+				  , HANBAI_TANI_TX
+				  , GENTANKA_VL
+				  , ZEI_KB
+				  , INSERT_USER_ID
+				  , INSERT_TS
+				  , UPDATE_USER_ID
+				  , UPDATE_TS
+				  , DELETE_FG
+				  , HANBAI_WEIGHT_QT
+				  , HAMPER_ITEM_CD
+				  , NEBIKI_VATIN_VL
+				  , REG_SELL
+				  , REG_SELL_WOT
+				  , TEIKAN_KB
+				  , RECEIPT_NO
+				  , RECEIPT_SUB_NO
+				  , VAT_PRINT_KB
+				  , SONEBIKIGO_ZEIKOMI_VL
+				  , SONEBIKIGO_ZEINUKI_VL
+				) 
+				/* #5900 Add X.Liu 2017.09.11 (E) */
+				SELECT
+					'0000' COMMAND_CD
+					, SD.SYUKA_TENPO_CD
+					, SUBSTR(SD.DENPYO_NO, 1, 3) REGI_RB
+					, SUBSTR(SD.DENPYO_NO, 4) TERMINAL_RB
+					, SD.SYUKA_DT
+					/* #5270 Mod X.Liu 2017.06.20 (S) */
+					/*, SEQ_EDA_RB SEQ_RB */
+					  , CASE 
+					    WHEN SM.HAMPER_SYOHIN_FG = '1'
+					    THEN SM.SEQ_EDA_RB * 100 + SM.KOSEI_RT
+					    ELSE SM.SEQ_EDA_RB
+					    END SEQ_RB
+					/* #5270 Mod X.Liu 2017.06.20 (E) */
+					, NULL SALES_TYPE
+					, SM.SYOHIN_CD
+					, CASE 
+					  WHEN SM.TEIKAN_KB = '1'
+					  AND SD.DENPYO_KB = '02'
+					  THEN NVL(SM.NOUHIN_SURYO_QT, 0) * - 1
+					  WHEN SM.TEIKAN_KB = '2'
+					  AND SD.DENPYO_KB = '02'
+					  /** #4499 Mod X.Liu 2017.03.31 (S) */
+					  /** THEN NVL(SM.NOUHIN_JYURYO_QT, 0) * - 1 */
+					  THEN NVL(SM.NOUHIN_JYURYO_QT, 0) * - 1000
+					  /** #4499 Mod X.Liu 2017.03.31 (E) */
+					  WHEN SM.TEIKAN_KB = '2'
+					  AND SD.DENPYO_KB <> '02'
+					  /** #4499 Mod X.Liu 2017.03.31 (S) */
+					  /** THEN NVL(SM.NOUHIN_JYURYO_QT, 0) */
+					  THEN NVL(SM.NOUHIN_JYURYO_QT * 1000, 0)
+					  /** #4499 Mod X.Liu 2017.03.31 (E) */
+					  ELSE NVL(SM.NOUHIN_SURYO_QT, 0)
+					  END SURYO_QT
+					, NVL(SM.OROSHI_BAITANKA_ZEINUKI_VL, 0) OROSHI_BAITANKA_ZEINUKI_VL
+					, CASE 
+					  WHEN SD.DENPYO_KB = '02' 
+					  THEN NVL(SM.BAIKA_ZEINUKI_VL, 0) * - 1
+					  ELSE NVL(SM.BAIKA_ZEINUKI_VL, 0) 
+					  END BAIKA_ZEINUKI_VL
+					, SM.OROSHI_TAX_RT
+					, CASE 
+					  WHEN SD.DENPYO_KB = '02' 
+					  THEN NVL(SM.BAIKA_ZEIGAKU_VL, 0) * - 1
+					  ELSE NVL(SM.BAIKA_ZEIGAKU_VL, 0)
+					  END BAIKA_ZEIGAKU_VL
+					, CASE
+					  WHEN SD.DENPYO_KB = '02'
+					  THEN NVL(SM.BAIKA_ZEIKOMI_VL, 0) * - 1
+					  ELSE NVL(SM.BAIKA_ZEIKOMI_VL, 0)
+					  END BAIKA_ZEIKOMI_VL
+					, RS.OLD_SYOHIN_CD
+					, SM.HINMEI_KANJI_NA
+					, SM.UNIT_NA
+					, NVL(SM.M_KOURI_GENTANKA_VL, 0) M_KOURI_GENTANKA_VL
+					, SM.OROSHI_ZEI_KB
+					, ? INSERT_USER_ID
+					, ? INSERT_TS
+					, ? UPDATE_USER_ID
+					, ? UPDATE_TS
+					, '0' DELETE_FG
+					, CASE 
+					  WHEN SD.DENPYO_KB = '02' 
+					  THEN NVL(SM.NOUHIN_JYURYO_QT, 0) * - 1 
+					  ELSE NVL(SM.NOUHIN_JYURYO_QT, 0) 
+					  /** #4499 Mod X.Liu 2017.03.31 (S) */
+					  /** END NOUHIN_JYURYO_QT */
+					  END *1000 NOUHIN_JYURYO_QT
+					  /** #4499 Mod X.Liu 2017.03.31 (E) */
+					  /* #5270 Mod X.Liu 2017.06.20 (S) */
+					  /* , NULL HAMPER_ITEM_CD */
+				      , CASE 
+					    WHEN SM.HAMPER_SYOHIN_FG = '1'
+					    THEN SM.HAMPER_SYOHIN_CD
+					    ELSE NULL
+					    END HAMPER_ITEM_CD
+					  /* #5270 Mod X.Liu 2017.06.20 (E) */
+					, 0 NEBIKI_VATIN_VL
+					, 0 REG_SELL
+					, 0 REG_SELL_WOT
+					, SM.TEIKAN_KB
+					, SD.CYOHYO_DENPYO_NO
+					/*#4768 Add X.Liu 2017.04.18 (S)*/
+					, 0 RECEIPT_SUB_NO
+					, '0' VAT_PRINT_KB
+					, 0 SONEBIKIGO_ZEIKOMI_VL
+					, 0 SONEBIKIGO_ZEINUKI_VL
+					/*#4768 Add X.Liu 2017.04.18 (E)*/
+				FROM
+					/* #4389 Mod X.Liu 2017.04.04 (S) */
+					/*DT_OROSHI_SYUKA_DENPYO SD
+					INNER JOIN DT_OROSHI_SYUKA_MEI SM*/
+					WK_OROSHI_SYUKA_DENPYO SD
+					INNER JOIN WK_OROSHI_SYUKA_MEI SM
+					/* #4389 Mod X.Liu 2017.04.04 (E) */
+						ON SM.COMP_CD = SD.COMP_CD
+						AND SM.SEQ_NB = SD.SEQ_NB
+						AND SM.DELETE_FG = '0'
+					LEFT OUTER JOIN (
+						SELECT
+							T1.COMP_CD
+							, T1.BUNRUI5_CD
+							, T1.BUNRUI1_CD
+						FROM
+							R_FI_SYOHIN_TAIKEI T1
+						WHERE
+							T1.COMP_CD = ?
+							AND T1.YUKO_DT = (
+								SELECT
+									MAX(T2.YUKO_DT)
+								FROM
+									R_FI_SYOHIN_TAIKEI T2
+								WHERE
+									T2.COMP_CD = T1.COMP_CD
+									AND T2.BUNRUI5_CD = T1.BUNRUI5_CD
+									AND T2.YUKO_DT <= ?
+							)
+					) T
+						ON T.COMP_CD = SM.COMP_CD
+						AND T.BUNRUI5_CD = SM.BUNRUI5_CD
+					LEFT OUTER JOIN (
+						SELECT
+							RS1.BUNRUI1_CD
+							, RS1.SYOHIN_CD
+							, RS1.OLD_SYOHIN_CD
+						FROM
+							R_SYOHIN RS1
+						WHERE
+							RS1.YUKO_DT = (
+								SELECT
+									MAX(RS2.YUKO_DT)
+								FROM
+									R_SYOHIN RS2
+								WHERE
+									RS2.BUNRUI1_CD = RS1.BUNRUI1_CD
+									AND RS2.SYOHIN_CD = RS1.SYOHIN_CD
+									AND RS2.YUKO_DT <= ?
+							)
+					) RS
+						ON RS.BUNRUI1_CD = NVL(SM.BUNRUI1_CD, T.BUNRUI1_CD)
+						AND RS.SYOHIN_CD = SM.SYOHIN_CD
+				WHERE
+					SD.COMP_CD = ?
+					/* #4389 Del X.Liu 2017.04.04 (S)*/
+					/*AND SD.DENPYO_KAKUTEI_DT = ?
+					AND SD.DELETE_FG = '0'*/
+					/* #4389 Del X.Liu 2017.04.04 (E)*/
+			]]>
+		</SQL>
+	</Dao>
+	<!-- レジ別取引精算データ作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.DtRegiTorihikiSeisanCreateDao">
+		<SQL id="insertDtRegiTorihikiSeisan">
+			<![CDATA[
+				MERGE INTO
+					DT_REGI_TORIHIKI_SEISAN DRTS
+				USING
+					(
+						SELECT
+							 COMP_CD
+							,SYUKA_DT KEIJO_DT
+							,SYUKA_TENPO_CD TENPO_CD
+							,CASE DENPYO_KB
+								WHEN '01' THEN '1001'
+								WHEN '02' THEN '1002'
+							 END TORIHIKI_CD
+							,0 KYAKU_QT
+							,0 TEN_KAISUU_QT
+							,SUM(SUMBAIKA_ZEIKOMI_VL) KINGAKU_VL
+							,0 NEBIKI_VL
+							,'999' SHIHARAI_SYUBETSU_CD
+							,'9999999' SHIHARAI_SYUBETSU_SUB_CD
+						FROM
+							/* #4389 Mod X.Liu 2017.04.04 (S)*/
+							/*DT_OROSHI_SYUKA_DENPYO*/
+							WK_OROSHI_SYUKA_DENPYO
+							/* #4389 Mod X.Liu 2017.04.04 (E)*/
+						WHERE
+							COMP_CD = ?
+						/* #4389 Del X.Liu 2017.04.04 (S)*/
+						/*AND DENPYO_KAKUTEI_DT = ?
+						  AND DELETE_FG = '0'*/
+						/* #4389 Del X.Liu 2017.04.04 (E)*/
+						GROUP BY
+							 COMP_CD
+							,SYUKA_DT
+							,SYUKA_TENPO_CD
+							,DENPYO_KB
+					) DOSD
+				ON
+					(
+							DRTS.COMP_CD = DOSD.COMP_CD
+						AND DRTS.KEIJO_DT = DOSD.KEIJO_DT
+						AND DRTS.TENPO_CD = DOSD.TENPO_CD
+						AND DRTS.TORIHIKI_CD = DOSD.TORIHIKI_CD
+						AND DRTS.SHIHARAI_SYUBETSU_CD = DOSD.SHIHARAI_SYUBETSU_CD
+						AND DRTS.SHIHARAI_SYUBETSU_SUB_CD = DOSD.SHIHARAI_SYUBETSU_SUB_CD
+					)
+				WHEN MATCHED THEN
+					UPDATE SET
+						 DRTS.KYAKU_QT = DRTS.KYAKU_QT + DOSD.KYAKU_QT
+						,DRTS.TEN_KAISUU_QT = DRTS.TEN_KAISUU_QT + DOSD.TEN_KAISUU_QT
+						,DRTS.KINGAKU_VL = DRTS.KINGAKU_VL + DOSD.KINGAKU_VL
+						,DRTS.NEBIKI_VL = DRTS.NEBIKI_VL + DOSD.NEBIKI_VL
+						,DRTS.UPDATE_USER_ID = ?
+						,DRTS.UPDATE_TS = ?
+						,DRTS.DATA_SAKUSEI_DT = ?
+				WHEN NOT MATCHED THEN
+					INSERT
+						(
+							 COMP_CD
+							,KEIJO_DT
+							,TENPO_CD
+							,TORIHIKI_CD
+							,KYAKU_QT
+							,TEN_KAISUU_QT
+							,KINGAKU_VL
+							,NEBIKI_VL
+							,INSERT_USER_ID
+							,INSERT_TS
+							,UPDATE_USER_ID
+							,UPDATE_TS
+							,SHIHARAI_SYUBETSU_CD
+							,SHIHARAI_SYUBETSU_SUB_CD
+							,DATA_SAKUSEI_DT
+						)
+					VALUES
+						(
+							 DOSD.COMP_CD
+							,DOSD.KEIJO_DT
+							,DOSD.TENPO_CD
+							,DOSD.TORIHIKI_CD
+							,DOSD.KYAKU_QT
+							,DOSD.TEN_KAISUU_QT
+							,DOSD.KINGAKU_VL
+							,DOSD.NEBIKI_VL
+							,?
+							,?
+							,?
+							,?
+							,DOSD.SHIHARAI_SYUBETSU_CD
+							,DOSD.SHIHARAI_SYUBETSU_SUB_CD
+							,?
+						)
+			]]>
+				<!--
+				INSERT
+				INTO DT_REGI_TORIHIKI_SEISAN
+				SELECT
+				  COMP_CD
+				  , SYUKA_DT KEIJO_DT
+				  , SYUKA_TENPO_CD TENPO_CD
+				  , CASE DENPYO_KB
+				    WHEN '01' THEN '1001'
+				    WHEN '02' THEN '1002'
+				    END TORIHIKI_CD
+				  , 0 KYAKU_QT
+				  , 0 TEN_KAISUU_QT
+				  , SUM(SUMBAIKA_ZEIKOMI_VL) KINGAKU_VL
+				  , 0 NEBIKI_VL
+				  , ? INSERT_USER_ID
+				  , ? INSERT_TS
+				  , ? UPDATE_USER_ID
+				  , ? UPDATE_TS
+				  , 999 SHIHARAI_SYUBETSU_CD
+				  , 99999 SHIHARAI_SYUBETSU_SUB_CD
+				  , ? DATA_SAKUSEI_DT
+				FROM
+				  DT_OROSHI_SYUKA_DENPYO
+				WHERE
+				  COMP_CD = ?
+				  AND DENPYO_KAKUTEI_DT = ?
+				  AND DELETE_FG = '0'
+				GROUP BY
+				  COMP_CD
+				  , SYUKA_DT
+				  , SYUKA_TENPO_CD
+				  , DENPYO_KB
+				-->
+		</SQL>
+	</Dao>
+	/* #4389 Add X.Liu 2017.04.04 (S)*/
+	<!-- 卸出荷伝票ワーク作成処理 -->
+	<Dao name="jp.co.vinculumjapan.mdware.uriage.dao.batch.impl.WkOroshiSyukaDenpyoCreateDao">
+		<!-- #5754 Mod X.Liu 2017.08.03 (S)-->
+			<!-- 
+			<SQL id="insertWkOroshiSyukaDenpyo">
+			<![CDATA[
+				INSERT 
+				INTO WK_OROSHI_SYUKA_DENPYO 
+				SELECT
+				  COMP_CD
+				  , SEQ_NB
+				  , DENPYO_KB
+				  , DENPYO_NO
+				  , DENPYO_EDA_RB
+				  , OROSHISAKI_CD
+				  , OROSHI_BAIKA_KB
+				  , OROSHI_BAIKA_ZOUGEN_RT
+				  , OROSHI_ZEIHYOJI_KB
+				  , OROSHI_ZEITEKIYO_KB
+				  , SEIKYUSAKI_CD
+				  , SYUKA_TENPO_CD
+				  , SYUKA_YOTEI_DT
+				  , SYUKA_DT
+				  , KANRI_DT
+				  , TEIKAN_KB
+				  , KAKUTEI_KB
+				  , KAMOKU_CD
+				  , ZEI_KB
+				  , TAX_RT
+				  , DENPYO_PRINT_QT
+				  , SYORI_STATUS_KB
+				  , SUM_QT
+				  , SUMBAIKA_ZEINUKI_VL
+				  , SUMBAIKA_ZEIKOMI_VL
+				  , SUMBAIKA_ZEIGAKU_VL
+				  , TEKIYO_TX
+				  , DENPYO_KAKUTEI_DT
+				  , DENPYO_KAKUTEI_TM
+				  , DENPYO_KAKUTEI_ID
+				  , SYUSEI_FUKA_FG
+				  , KAIJO_FG
+				  , KENSYU_DT
+				  , MOTO_DENPYO_NO
+				  , CYOHYO_DENPYO_NO
+				  , FAST_LIST_DENPYO_NB
+				  , DENPYO_RECORD_KB
+				  , LIST_KAKUTEI_DT
+				  , LIST_KAKUTEI_USER_ID
+				  , LIST_FIRST_PRINT_DT
+				  , LIST_FIRST_PRINT_USER_ID
+				  , LIST_LAST_PRINT_DT
+				  , LIST_LAST_PRINT_USER_ID
+				  , INVOICE_KEYINNO_NB
+				  , INVOICE_KEYINNO_KB
+				  , INVOICE_KEYINNO_RB
+				  , INVOICE_KEYINNO_HAKOU_DT
+				  , INVOICE_AUTONO_NB
+				  , INVOICE_AUTONO_KB
+				  , INVOICE_AUTONO_RB
+				  , INVOICE_AUTONO_HAKOU_DT
+				  , LAST_KB
+				  , ? INSERT_USER_ID
+				  , ? INSERT_TS
+				  , ? UPDATE_USER_ID
+				  , ? UPDATE_TS
+				  , DELETE_FG
+				  , MOTO_DENPYO_EDA_RB
+				  , CANCEL_DENPYO_NO
+				  , CANCEL_EDA_RB
+				  , BIKO
+				  , OROSHI_CANCEL_KB
+				  , SALSE_DENPYO_NO
+				  , VAT_KB
+				  , SHIHARAI_HOHO
+				  , KOZA_NB
+				  , OROSHI_VAT_KEYINNO_NB
+				  , OROSHI_VAT_KEYINNO_KB
+				  , OROSHI_VAT_KEYINNO_RB
+				  , OROSHI_VAT_KEYINNO_HAKOU_DT
+				  , CUSTOMER_NAME
+				  , ADDRESS
+				  , VAT_CODE
+				  , PERSONAL_NAME
+				FROM
+				  DT_OROSHI_SYUKA_DENPYO 
+				WHERE
+				  SYORI_STATUS_KB = '1' 
+				  AND ( 
+				    /* #5090 Mod J.Endo 2017.05.19 (S)*/
+				    /*(OROSHI_CANCEL_KB <> '1' AND DENPYO_PRINT_QT > 0) */
+				    /*OR (OROSHI_CANCEL_KB = '1')*/
+				    /*(NVL(OROSHI_CANCEL_KB, '0') <> '1' AND DENPYO_PRINT_QT > 0)*/ 
+				    /*OR (NVL(OROSHI_CANCEL_KB, '0') = '1')*/
+				    /* #5090 Mod J.Endo 2017.05.19 (E)*/
+				    (DENPYO_PRINT_QT > 0)
+				    OR (DENPYO_PRINT_QT = 0 AND LIST_FIRST_PRINT_DT IS NOT NULL )
+				    OR (DENPYO_PRINT_QT = 0 AND OROSHI_CANCEL_KB = '1' AND LIST_FIRST_PRINT_DT IS NOT NULL)
+				  ) 
+				  AND DELETE_FG = '0'
+			]]> -->
+			<SQL id="insertWkOroshiSyukaDenpyo">
+			<![CDATA[
+			INSERT 
+			INTO WK_OROSHI_SYUKA_DENPYO( 
+			  COMP_CD
+			  , SEQ_NB
+			  , DENPYO_KB
+			  , DENPYO_NO
+			  , DENPYO_EDA_RB
+			  , OROSHISAKI_CD
+			  , OROSHI_BAIKA_KB
+			  , OROSHI_BAIKA_ZOUGEN_RT
+			  , OROSHI_ZEIHYOJI_KB
+			  , OROSHI_ZEITEKIYO_KB
+			  , SEIKYUSAKI_CD
+			  , SYUKA_TENPO_CD
+			  , SYUKA_YOTEI_DT
+			  , SYUKA_DT
+			  , KANRI_DT
+			  , TEIKAN_KB
+			  , KAKUTEI_KB
+			  , KAMOKU_CD
+			  , ZEI_KB
+			  , TAX_RT
+			  , DENPYO_PRINT_QT
+			  , SYORI_STATUS_KB
+			  , SUM_QT
+			  , SUMBAIKA_ZEINUKI_VL
+			  , SUMBAIKA_ZEIKOMI_VL
+			  , SUMBAIKA_ZEIGAKU_VL
+			  , TEKIYO_TX
+			  , DENPYO_KAKUTEI_DT
+			  , DENPYO_KAKUTEI_TM
+			  , DENPYO_KAKUTEI_ID
+			  , SYUSEI_FUKA_FG
+			  , KAIJO_FG
+			  , KENSYU_DT
+			  , MOTO_DENPYO_NO
+			  , CYOHYO_DENPYO_NO
+			  , FAST_LIST_DENPYO_NB
+			  , DENPYO_RECORD_KB
+			  , LIST_KAKUTEI_DT
+			  , LIST_KAKUTEI_USER_ID
+			  , LIST_FIRST_PRINT_DT
+			  , LIST_FIRST_PRINT_USER_ID
+			  , LIST_LAST_PRINT_DT
+			  , LIST_LAST_PRINT_USER_ID
+			  , INVOICE_KEYINNO_NB
+			  , INVOICE_KEYINNO_KB
+			  , INVOICE_KEYINNO_RB
+			  , INVOICE_KEYINNO_HAKOU_DT
+			  , INVOICE_AUTONO_NB
+			  , INVOICE_AUTONO_KB
+			  , INVOICE_AUTONO_RB
+			  , INVOICE_AUTONO_HAKOU_DT
+			  , LAST_KB
+			  , INSERT_USER_ID
+			  , INSERT_TS
+			  , UPDATE_USER_ID
+			  , UPDATE_TS
+			  , DELETE_FG
+			  , MOTO_DENPYO_EDA_RB
+			  , CANCEL_DENPYO_NO
+			  , CANCEL_EDA_RB
+			  , BIKO
+			  , OROSHI_CANCEL_KB
+			  , SALSE_DENPYO_NO
+			  , VAT_KB
+			  , SHIHARAI_HOHO
+			  , KOZA_NB
+			  , OROSHI_VAT_KEYINNO_NB
+			  , OROSHI_VAT_KEYINNO_KB
+			  , OROSHI_VAT_KEYINNO_RB
+			  , OROSHI_VAT_KEYINNO_HAKOU_DT
+			  , CUSTOMER_NAME
+			  , ADDRESS
+			  , VAT_CODE
+			  , PERSONAL_NAME
+			  , URI_VAT_KB
+			) 
+			SELECT
+			  DOSD.COMP_CD
+			  , DOSD.SEQ_NB
+			  , DOSD.DENPYO_KB
+			  , DOSD.DENPYO_NO
+			  , DOSD.DENPYO_EDA_RB
+			  , DOSD.OROSHISAKI_CD
+			  , DOSD.OROSHI_BAIKA_KB
+			  , DOSD.OROSHI_BAIKA_ZOUGEN_RT
+			  , DOSD.OROSHI_ZEIHYOJI_KB
+			  , DOSD.OROSHI_ZEITEKIYO_KB
+			  , DOSD.SEIKYUSAKI_CD
+			  , DOSD.SYUKA_TENPO_CD
+			  , DOSD.SYUKA_YOTEI_DT
+			  , DOSD.SYUKA_DT
+			  , DOSD.KANRI_DT
+			  , DOSD.TEIKAN_KB
+			  , DOSD.KAKUTEI_KB
+			  , DOSD.KAMOKU_CD
+			  , DOSD.ZEI_KB
+			  , DOSD.TAX_RT
+			  , DOSD.DENPYO_PRINT_QT
+			  , DOSD.SYORI_STATUS_KB
+			  , DOSD.SUM_QT
+			  , DOSD.SUMBAIKA_ZEINUKI_VL
+			  , DOSD.SUMBAIKA_ZEIKOMI_VL
+			  , DOSD.SUMBAIKA_ZEIGAKU_VL
+			  , DOSD.TEKIYO_TX
+			  , DOSD.DENPYO_KAKUTEI_DT
+			  , DOSD.DENPYO_KAKUTEI_TM
+			  , DOSD.DENPYO_KAKUTEI_ID
+			  , DOSD.SYUSEI_FUKA_FG
+			  , DOSD.KAIJO_FG
+			  , DOSD.KENSYU_DT
+			  , DOSD.MOTO_DENPYO_NO
+			  , DOSD.CYOHYO_DENPYO_NO
+			  , DOSD.FAST_LIST_DENPYO_NB
+			  , DOSD.DENPYO_RECORD_KB
+			  , DOSD.LIST_KAKUTEI_DT
+			  , DOSD.LIST_KAKUTEI_USER_ID
+			  , DOSD.LIST_FIRST_PRINT_DT
+			  , DOSD.LIST_FIRST_PRINT_USER_ID
+			  , DOSD.LIST_LAST_PRINT_DT
+			  , DOSD.LIST_LAST_PRINT_USER_ID
+			  , DOSD.INVOICE_KEYINNO_NB
+			  , DOSD.INVOICE_KEYINNO_KB
+			  , DOSD.INVOICE_KEYINNO_RB
+			  , DOSD.INVOICE_KEYINNO_HAKOU_DT
+			  , DOSD.INVOICE_AUTONO_NB
+			  , DOSD.INVOICE_AUTONO_KB
+			  , DOSD.INVOICE_AUTONO_RB
+			  , DOSD.INVOICE_AUTONO_HAKOU_DT
+			  , DOSD.LAST_KB
+			  , ? INSERT_USER_ID
+			  , ? INSERT_TS
+			  , ? UPDATE_USER_ID
+			  , ? UPDATE_TS
+			  , DOSD.DELETE_FG
+			  , DOSD.MOTO_DENPYO_EDA_RB
+			  , DOSD.CANCEL_DENPYO_NO
+			  , DOSD.CANCEL_EDA_RB
+			  , DOSD.BIKO
+			  , DOSD.OROSHI_CANCEL_KB
+			  , DOSD.SALSE_DENPYO_NO
+			  , DOSD.VAT_KB
+			  , DOSD.SHIHARAI_HOHO
+			  , DOSD.KOZA_NB
+			  , DOSD.OROSHI_VAT_KEYINNO_NB
+			  , DOSD.OROSHI_VAT_KEYINNO_KB
+			  , DOSD.OROSHI_VAT_KEYINNO_RB
+			  , DOSD.OROSHI_VAT_KEYINNO_HAKOU_DT
+			  , DOSD.CUSTOMER_NAME
+			  , DOSD.ADDRESS
+			  , DOSD.VAT_CODE
+			  , DOSD.PERSONAL_NAME
+			  , CASE 
+			    WHEN DOSD.OROSHI_CANCEL_KB = '1' 
+			    THEN DOSDM.VAT_KB 
+			    ELSE DOSD.VAT_KB 
+			    END AS URI_VAT_KB 
+			FROM
+			  DT_OROSHI_SYUKA_DENPYO DOSD 
+			  LEFT JOIN DT_OROSHI_SYUKA_DENPYO DOSDM 
+			    ON DOSD.COMP_CD = DOSDM.COMP_CD 
+			    AND DOSD.MOTO_DENPYO_NO = DOSDM.DENPYO_NO 
+			WHERE
+			  DOSD.SYORI_STATUS_KB = '1' 
+			  AND ( 
+			    (DOSD.DENPYO_PRINT_QT > 0) 
+			    OR ( 
+			      DOSD.DENPYO_PRINT_QT = 0 
+			      AND DOSD.LIST_FIRST_PRINT_DT IS NOT NULL
+			    ) 
+			    OR ( 
+			      DOSD.DENPYO_PRINT_QT = 0 
+			      AND DOSD.OROSHI_CANCEL_KB = '1' 
+			      AND DOSDM.LIST_FIRST_PRINT_DT IS NOT NULL
+			    )
+			  ) 
+			  AND DOSD.DELETE_FG = '0'
+			]]>
+		<!-- #5754 Mod X.Liu 2017.08.03 (E)-->
+			</SQL>
+		<SQL id="insertWkOroshiSyukaMei">
+			<![CDATA[
+				INSERT 
+				INTO WK_OROSHI_SYUKA_MEI 
+				/* #5270 Add X.Liu 2017.06.20 (S) */
+				(
+				    COMP_CD
+				  , SEQ_NB
+				  , SEQ_EDA_RB
+				  , SYOHIN_CD
+				  , BUNRUI1_CD
+				  , BUNRUI2_CD
+				  , BUNRUI5_CD
+				  , M_KOURI_BAITANKA_VL
+				  , M_KOURI_GENTANKA_VL
+				  , M_OROSHI_BAITANKA_VL
+				  , SEIKYUSAKI_OROSHI_BAITANKA_VL
+				  , HINMEI_KANJI_NA
+				  , KIKAKU_KANJI_NA
+				  , KIKAKU_KANJI_2_NA
+				  , HINMEI_KANA_NA
+				  , HANBAI_TANI
+				  , BARA_IRISU_QT
+				  , UNIT_NA
+				  , TEIKAN_KB
+				  , KOURI_ZEI_KB
+				  , KOURI_TAX_RT
+				  , OROSHI_ZEI_KB
+				  , OROSHI_TAX_RT
+				  , OROSHI_BAITANKA_ZEINUKI_VL
+				  , OROSHI_BAITANKA_ZEIKOMI_VL
+				  , OROSHI_BAITANKA_ZEIGAKU_VL
+				  , HACHU_SURYO_QT
+				  , HACHU_JYURYO_QT
+				  , SYUSEI_SURYO_QT
+				  , SYUSEI_JYURYO_QT
+				  , NOUHIN_SURYO_QT
+				  , NOUHIN_JYURYO_QT
+				  , BAIKA_ZEINUKI_VL
+				  , BAIKA_ZEIKOMI_VL
+				  , BAIKA_ZEIGAKU_VL
+				  , INSERT_USER_ID
+				  , INSERT_TS
+				  , UPDATE_USER_ID
+				  , UPDATE_TS
+				  , DELETE_FG
+				  , M_KOURI_BAITANKA_ZEIKOMI_VL
+				  , M_KOURI_GENTANKA_ZEIKOMI_VL
+				  , M_OROSHI_BAITANKA_ZEIKOMI_VL 
+				  , KOSEI_RT
+				  , HAMPER_SYOHIN_FG
+				  , HAMPER_SYOHIN_CD
+				)
+				/* #5270 Add X.Liu 2017.06.20 (E) */
+				SELECT
+				  SM.COMP_CD
+				  , SM.SEQ_NB
+				  , SM.SEQ_EDA_RB
+				  , SM.SYOHIN_CD
+				  , SM.BUNRUI1_CD
+				  , SM.BUNRUI2_CD
+				  , SM.BUNRUI5_CD
+				  , SM.M_KOURI_BAITANKA_VL
+				  , SM.M_KOURI_GENTANKA_VL
+				  , SM.M_OROSHI_BAITANKA_VL
+				  , SM.SEIKYUSAKI_OROSHI_BAITANKA_VL
+				  , SM.HINMEI_KANJI_NA
+				  , SM.KIKAKU_KANJI_NA
+				  , SM.KIKAKU_KANJI_2_NA
+				  , SM.HINMEI_KANA_NA
+				  , SM.HANBAI_TANI
+				  , SM.BARA_IRISU_QT
+				  , SM.UNIT_NA
+				  , SM.TEIKAN_KB
+				  , SM.KOURI_ZEI_KB
+				  , SM.KOURI_TAX_RT
+				  , SM.OROSHI_ZEI_KB
+				  , SM.OROSHI_TAX_RT
+				  , SM.OROSHI_BAITANKA_ZEINUKI_VL
+				  , SM.OROSHI_BAITANKA_ZEIKOMI_VL
+				  , SM.OROSHI_BAITANKA_ZEIGAKU_VL
+				  , SM.HACHU_SURYO_QT
+				  , SM.HACHU_JYURYO_QT
+				  , SM.SYUSEI_SURYO_QT
+				  , SM.SYUSEI_JYURYO_QT
+				  , SM.NOUHIN_SURYO_QT
+				  , SM.NOUHIN_JYURYO_QT
+				  , SM.BAIKA_ZEINUKI_VL
+				  , SM.BAIKA_ZEIKOMI_VL
+				  , SM.BAIKA_ZEIGAKU_VL
+				  , ? INSERT_USER_ID
+				  , ? INSERT_TS
+				  , ? UPDATE_USER_ID
+				  , ? UPDATE_TS
+				  , SM.DELETE_FG
+				  , SM.M_KOURI_BAITANKA_ZEIKOMI_VL
+				  , SM.M_KOURI_GENTANKA_ZEIKOMI_VL
+				  , SM.M_OROSHI_BAITANKA_ZEIKOMI_VL 
+				  /* #5270 Add X.Liu 2017.06.20 (S) */
+				  , 0 KOSEI_RT
+				  , SM.HAMPER_SYOHIN_FG
+				  , NULL HAMPER_SYOHIN_CD 
+				  /* #5270 Add X.Liu 2017.06.20 (E) */
+				FROM
+				  DT_OROSHI_SYUKA_MEI SM 
+				  INNER JOIN DT_OROSHI_SYUKA_DENPYO SD 
+				    ON SM.COMP_CD = SD.COMP_CD 
+				    AND SM.SEQ_NB = SD.SEQ_NB 
+				    /* #5754 Add X.Liu 2017.08.03 (S)*/
+				    LEFT JOIN DT_OROSHI_SYUKA_DENPYO SDM 
+				    ON SD.COMP_CD = SDM.COMP_CD 
+				    AND SD.MOTO_DENPYO_NO = SDM.DENPYO_NO 
+				    /* #5754 Add X.Liu 2017.08.03 (E)*/
+				WHERE
+				  SD.SYORI_STATUS_KB = '1' 
+				  AND ( 
+				    /* #5090 Mod J.Endo 2017.05.19 (S)*/
+				    /*(SD.OROSHI_CANCEL_KB <> '1' AND SD.DENPYO_PRINT_QT > 0) */
+				    /*OR (SD.OROSHI_CANCEL_KB = '1')*/
+				    /* #5754 Mod X.Liu 2017.08.03 (S)*/
+				    /*(NVL(SD.OROSHI_CANCEL_KB, '0') <> '1' AND SD.DENPYO_PRINT_QT > 0)*/ 
+				    /*OR (NVL(SD.OROSHI_CANCEL_KB, '0') = '1')*/ 
+				    /* #5090 Mod J.Endo 2017.05.19 (E)*/
+				    (SD.DENPYO_PRINT_QT > 0) 
+				    OR ( 
+				      SD.DENPYO_PRINT_QT = 0 
+				      AND SD.LIST_FIRST_PRINT_DT IS NOT NULL
+				    ) 
+				    OR ( 
+				      SD.DENPYO_PRINT_QT = 0 
+				      AND SD.OROSHI_CANCEL_KB = '1' 
+				      AND SDM.LIST_FIRST_PRINT_DT IS NOT NULL
+				    )
+				    /* #5754 Mod X.Liu 2017.08.03 (E)*/
+				  )
+				  AND SM.DELETE_FG = '0'
+				  AND SD.DELETE_FG = '0'
+				  /* #5270 Add X.Liu 2017.06.20 (S) */
+				  AND SM.HAMPER_SYOHIN_FG <> '1'
+				  UNION ALL
+					SELECT
+					  SM.COMP_CD
+					  , SM.SEQ_NB
+					  , SM.SEQ_EDA_RB
+					  , DOSH.SYOHIN_CD
+					  , DOSH.BUNRUI1_CD
+					  , DOSH.BUNRUI2_CD
+					  , DOSH.BUNRUI5_CD
+					  , DOSH.M_KOURI_BAITANKA_VL
+					  , DOSH.M_KOURI_GENTANKA_VL
+					  , DOSH.M_OROSHI_BAITANKA_VL
+					  , DOSH.SEIKYUSAKI_OROSHI_BAITANKA_VL
+					  , DOSH.HINMEI_KANJI_NA
+					  , DOSH.KIKAKU_KANJI_NA
+					  , DOSH.KIKAKU_KANJI_2_NA
+					  , DOSH.HINMEI_KANA_NA
+					  , DOSH.HANBAI_TANI
+					  , DOSH.BARA_IRISU_QT
+					  , DOSH.UNIT_NA
+					  , DOSH.TEIKAN_KB
+					  , DOSH.KOURI_ZEI_KB
+					  , DOSH.KOURI_TAX_RT
+					  , DOSH.OROSHI_ZEI_KB
+					  , DOSH.OROSHI_TAX_RT
+					  , DOSH.OROSHI_BAITANKA_ZEINUKI_VL
+					  , DOSH.OROSHI_BAITANKA_ZEIKOMI_VL
+					  , DOSH.OROSHI_BAITANKA_ZEIGAKU_VL
+					  , DOSH.HACHU_SURYO_QT
+					  , DOSH.HACHU_JYURYO_QT
+					  , DOSH.SYUSEI_SURYO_QT
+					  , DOSH.SYUSEI_JYURYO_QT
+					  , DOSH.NOUHIN_SURYO_QT
+					  , DOSH.NOUHIN_JYURYO_QT
+					  , DOSH.BAIKA_ZEINUKI_VL
+					  , DOSH.BAIKA_ZEIKOMI_VL
+					  , DOSH.BAIKA_ZEIGAKU_VL
+					  , ? INSERT_USER_ID
+					  , ? INSERT_TS
+					  , ? UPDATE_USER_ID
+					  , ? UPDATE_TS
+					  , DOSH.DELETE_FG
+					  , DOSH.M_KOURI_BAITANKA_ZEIKOMI_VL
+					  , DOSH.M_KOURI_GENTANKA_ZEIKOMI_VL
+					  , DOSH.M_OROSHI_BAITANKA_ZEIKOMI_VL
+					  , DOSH.KOSEI_RT
+					  , SM.HAMPER_SYOHIN_FG
+					  , SM.SYOHIN_CD 
+					FROM
+					  DT_OROSHI_SYUKA_MEI SM 
+					  INNER JOIN DT_OROSHI_SYUKA_DENPYO SD 
+					    ON SM.COMP_CD = SD.COMP_CD 
+					    AND SM.SEQ_NB = SD.SEQ_NB
+					   INNER JOIN DT_OROSHI_SYUKA_HAM DOSH 
+					    ON SM.COMP_CD = DOSH.COMP_CD 
+					    AND SM.SEQ_NB = DOSH.SEQ_NB
+					    AND SM.SEQ_EDA_RB = DOSH.SEQ_EDA_RB
+					    /* #5754 Add X.Liu 2017.08.03 (S)*/
+					      LEFT JOIN DT_OROSHI_SYUKA_DENPYO SDM 
+						    ON SD.COMP_CD = SDM.COMP_CD 
+						    AND SD.MOTO_DENPYO_NO = SDM.DENPYO_NO  
+					    /* #5754 Add X.Liu 2017.08.03 (E)*/
+					WHERE
+					  SD.SYORI_STATUS_KB = '1' 
+					  AND ( 
+					    /* #5754 Mod X.Liu 2017.08.03 (S)*/
+					    /* ( */ 
+					    /*  NVL(SD.OROSHI_CANCEL_KB, '0') <> '1' */ 
+					    /*  AND SD.DENPYO_PRINT_QT > 0 */
+					    /* )  */
+					    /* OR (NVL(SD.OROSHI_CANCEL_KB, '0') = '1') */
+					        (SD.DENPYO_PRINT_QT > 0) 
+						    OR ( 
+						      SD.DENPYO_PRINT_QT = 0 
+						      AND SD.LIST_FIRST_PRINT_DT IS NOT NULL
+						    ) 
+						    OR ( 
+						      SD.DENPYO_PRINT_QT = 0 
+						      AND SD.OROSHI_CANCEL_KB = '1' 
+						      AND SDM.LIST_FIRST_PRINT_DT IS NOT NULL
+						    )
+					    /* #5754 Mod X.Liu 2017.08.03 (E)*/
+					  ) 
+					  AND SM.DELETE_FG = '0' 
+					  AND SD.DELETE_FG = '0'
+					  AND SM.HAMPER_SYOHIN_FG = '1'
+				  /* #5270 Add X.Liu 2017.06.20 (E) */
+			]]>
+			</SQL>
+<!-- #5270 Add X.Liu 2017.06.19 (S) -->
+		<SQL id="insertWkOroshiSyukaDenpyoCancel">
+		<![CDATA[
+			INSERT 
+			INTO WK_OROSHI_SYUKA_DENPYO_CANCEL( 
+			  COMP_CD
+			  , SEQ_NB
+			  , DENPYO_KB
+			  , DENPYO_NO
+			  , DENPYO_EDA_RB
+			  , OROSHISAKI_CD
+			  , OROSHI_BAIKA_KB
+			  , OROSHI_BAIKA_ZOUGEN_RT
+			  , OROSHI_ZEIHYOJI_KB
+			  , OROSHI_ZEITEKIYO_KB
+			  , SEIKYUSAKI_CD
+			  , SYUKA_TENPO_CD
+			  , SYUKA_YOTEI_DT
+			  , SYUKA_DT
+			  , KANRI_DT
+			  , TEIKAN_KB
+			  , KAKUTEI_KB
+			  , KAMOKU_CD
+			  , ZEI_KB
+			  , TAX_RT
+			  , DENPYO_PRINT_QT
+			  , SYORI_STATUS_KB
+			  , SUM_QT
+			  , SUMBAIKA_ZEINUKI_VL
+			  , SUMBAIKA_ZEIKOMI_VL
+			  , SUMBAIKA_ZEIGAKU_VL
+			  , TEKIYO_TX
+			  , DENPYO_KAKUTEI_DT
+			  , DENPYO_KAKUTEI_TM
+			  , DENPYO_KAKUTEI_ID
+			  , SYUSEI_FUKA_FG
+			  , KAIJO_FG
+			  , KENSYU_DT
+			  , MOTO_DENPYO_NO
+			  , CYOHYO_DENPYO_NO
+			  , FAST_LIST_DENPYO_NB
+			  , DENPYO_RECORD_KB
+			  , LIST_KAKUTEI_DT
+			  , LIST_KAKUTEI_USER_ID
+			  , LIST_FIRST_PRINT_DT
+			  , LIST_FIRST_PRINT_USER_ID
+			  , LIST_LAST_PRINT_DT
+			  , LIST_LAST_PRINT_USER_ID
+			  , INVOICE_KEYINNO_NB
+			  , INVOICE_KEYINNO_KB
+			  , INVOICE_KEYINNO_RB
+			  , INVOICE_KEYINNO_HAKOU_DT
+			  , INVOICE_AUTONO_NB
+			  , INVOICE_AUTONO_KB
+			  , INVOICE_AUTONO_RB
+			  , INVOICE_AUTONO_HAKOU_DT
+			  , LAST_KB
+			  , INSERT_USER_ID
+			  , INSERT_TS
+			  , UPDATE_USER_ID
+			  , UPDATE_TS
+			  , DELETE_FG
+			  , MOTO_DENPYO_EDA_RB
+			  , CANCEL_DENPYO_NO
+			  , CANCEL_EDA_RB
+			  , BIKO
+			  , OROSHI_CANCEL_KB
+			  , SALSE_DENPYO_NO
+			  , VAT_KB
+			  , SHIHARAI_HOHO
+			  , KOZA_NB
+			  , CUSTOMER_NAME
+			  , ADDRESS
+			  , VAT_CODE
+			  , PERSONAL_NAME
+			  , OROSHI_VAT_KEYINNO_NB
+			  , OROSHI_VAT_KEYINNO_KB
+			  , OROSHI_VAT_KEYINNO_RB
+			  , OROSHI_VAT_KEYINNO_HAKOU_DT
+			  , SAIHAKOU_FG
+			  /* #5754 Add X.Liu 2017.08.03 (S) */
+			  , URI_VAT_KB
+			  /* #5754 Add X.Liu 2017.08.03 (E) */
+			) 
+			SELECT
+			  DOSD.COMP_CD
+			  , DOSD.SEQ_NB
+			  , DOSD.DENPYO_KB
+			  , DOSD.DENPYO_NO
+			  , DOSD.DENPYO_EDA_RB
+			  , DOSD.OROSHISAKI_CD
+			  , DOSD.OROSHI_BAIKA_KB
+			  , DOSD.OROSHI_BAIKA_ZOUGEN_RT
+			  , DOSD.OROSHI_ZEIHYOJI_KB
+			  , DOSD.OROSHI_ZEITEKIYO_KB
+			  , DOSD.SEIKYUSAKI_CD
+			  , DOSD.SYUKA_TENPO_CD
+			  , DOSD.SYUKA_YOTEI_DT
+			  , DOSD.SYUKA_DT
+			  , DOSD.KANRI_DT
+			  , DOSD.TEIKAN_KB
+			  , DOSD.KAKUTEI_KB
+			  , DOSD.KAMOKU_CD
+			  , DOSD.ZEI_KB
+			  , DOSD.TAX_RT
+			  , DOSD.DENPYO_PRINT_QT
+			  , DOSD.SYORI_STATUS_KB
+			  , DOSD.SUM_QT
+			  , DOSD.SUMBAIKA_ZEINUKI_VL
+			  , DOSD.SUMBAIKA_ZEIKOMI_VL
+			  , DOSD.SUMBAIKA_ZEIGAKU_VL
+			  , DOSD.TEKIYO_TX
+			  , DOSD.DENPYO_KAKUTEI_DT
+			  , DOSD.DENPYO_KAKUTEI_TM
+			  , DOSD.DENPYO_KAKUTEI_ID
+			  , DOSD.SYUSEI_FUKA_FG
+			  , DOSD.KAIJO_FG
+			  , DOSD.KENSYU_DT
+			  , DOSD.MOTO_DENPYO_NO
+			  , DOSD.CYOHYO_DENPYO_NO
+			  , DOSD.FAST_LIST_DENPYO_NB
+			  , DOSD.DENPYO_RECORD_KB
+			  , DOSD.LIST_KAKUTEI_DT
+			  , DOSD.LIST_KAKUTEI_USER_ID
+			  , DOSD.LIST_FIRST_PRINT_DT
+			  , DOSD.LIST_FIRST_PRINT_USER_ID
+			  , DOSD.LIST_LAST_PRINT_DT
+			  , DOSD.LIST_LAST_PRINT_USER_ID
+			  , DOSD.INVOICE_KEYINNO_NB
+			  , DOSD.INVOICE_KEYINNO_KB
+			  , DOSD.INVOICE_KEYINNO_RB
+			  , DOSD.INVOICE_KEYINNO_HAKOU_DT
+			  , DOSD.INVOICE_AUTONO_NB
+			  , DOSD.INVOICE_AUTONO_KB
+			  , DOSD.INVOICE_AUTONO_RB
+			  , DOSD.INVOICE_AUTONO_HAKOU_DT
+			  , DOSD.LAST_KB
+			  , DOSD.INSERT_USER_ID
+			  , DOSD.INSERT_TS
+			  , DOSD.UPDATE_USER_ID
+			  , DOSD.UPDATE_TS
+			  , DOSD.DELETE_FG
+			  , DOSD.MOTO_DENPYO_EDA_RB
+			  , DOSD.CANCEL_DENPYO_NO
+			  , DOSD.CANCEL_EDA_RB
+			  , DOSD.BIKO
+			  , DOSD.OROSHI_CANCEL_KB
+			  , DOSD.SALSE_DENPYO_NO
+			  , DOSD.VAT_KB
+			  , DOSD.SHIHARAI_HOHO
+			  , DOSD.KOZA_NB
+			  , DOSD.CUSTOMER_NAME
+			  , DOSD.ADDRESS
+			  , DOSD.VAT_CODE
+			  , DOSD.PERSONAL_NAME
+			  , DOSD.OROSHI_VAT_KEYINNO_NB
+			  , DOSD.OROSHI_VAT_KEYINNO_KB
+			  , DOSD.OROSHI_VAT_KEYINNO_RB
+			  , DOSD.OROSHI_VAT_KEYINNO_HAKOU_DT
+			  , DOSD.SAIHAKOU_FG 
+			  /* #5754 Add X.Liu 2017.08.03 (S) */
+			  , CASE 
+			    WHEN DOSD.OROSHI_CANCEL_KB = '1' 
+			    THEN DOSDM.VAT_KB 
+			    ELSE DOSD.VAT_KB 
+			    END AS URI_VAT_KB
+			  /* #5754 Add X.Liu 2017.08.03 (E) */ 
+			FROM
+			  DT_OROSHI_SYUKA_DENPYO DOSD 
+			  INNER JOIN ( 
+			    SELECT
+			      OD2.SYUKA_DT AS SYUKA_DT
+			      , MAX(RC1.KARIZIMESYORI_KB) AS KARIZIMESYORI_KB 
+			    FROM
+			      ( 
+			        SELECT
+			          OD1.SYUKA_DT AS SYUKA_DT 
+			        FROM
+			          DT_OROSHI_SYUKA_DENPYO OD1 
+			        WHERE
+			          OD1.SYORI_STATUS_KB = '2' 
+			          AND OD1.SAIHAKOU_FG = '1' 
+			        GROUP BY
+			          OD1.SYUKA_DT
+			      ) OD2 
+			      INNER JOIN R_CALENDAR RC1 
+			        ON RC1.START_DT <= OD2.SYUKA_DT 
+			        AND OD2.SYUKA_DT <= RC1.END_DT 
+			    GROUP BY
+			      OD2.SYUKA_DT
+			  ) RCAL 
+			    ON DOSD.SYUKA_DT = RCAL.SYUKA_DT 
+			    /* #5754 X.Liu 2017.08.03 (S) */
+			  LEFT JOIN DT_OROSHI_SYUKA_DENPYO DOSDM 
+			    ON DOSD.COMP_CD = DOSDM.COMP_CD 
+			    AND DOSD.MOTO_DENPYO_NO = DOSDM.DENPYO_NO
+			    /* #5754 X.Liu 2017.08.03 (E) */ 
+			WHERE
+			  DOSD.SYORI_STATUS_KB = '2' 
+			  AND DOSD.SAIHAKOU_FG = '1' 
+			  AND RCAL.KARIZIMESYORI_KB = '0'
+		]]>
+		</SQL>	
+<!-- #5270 Add X.Liu 2017.06.19 (E) -->
+		<SQL id="updateDTOroshiSyukaDenpyo">
+		<![CDATA[
+		/* #5754 Mod X.Liu 2017.08.03 (S)*/
+			UPDATE DT_OROSHI_SYUKA_DENPYO SD
+			SET
+			  SYORI_STATUS_KB = '2',
+			  UPDATE_USER_ID = ?,
+			  UPDATE_TS = ? 
+			WHERE
+			  /* SYORI_STATUS_KB = '1' */
+			  /* AND ( */
+			    /* #5090 Mod J.Endo 2017.05.19 (S)*/
+			    /*(OROSHI_CANCEL_KB <> '1' AND DENPYO_PRINT_QT > 0) */
+			    /*OR (OROSHI_CANCEL_KB = '1')*/
+			    /* (NVL(OROSHI_CANCEL_KB, '0') <> '1' AND DENPYO_PRINT_QT > 0) */ 
+			    /* OR (NVL(OROSHI_CANCEL_KB, '0') = '1') */
+			    /* #5090 Mod J.Endo 2017.05.19 (E)*/
+			  /* ) */
+			  /* AND DELETE_FG = '0' */
+			   EXISTS ( 
+				    SELECT
+				      1 
+				    FROM
+				      ( 
+				        SELECT
+				          DOSD.COMP_CD
+				          , DOSD.SEQ_NB 
+				        FROM
+				          DT_OROSHI_SYUKA_DENPYO DOSD 
+				          LEFT JOIN DT_OROSHI_SYUKA_DENPYO DOSDM 
+				            ON DOSD.COMP_CD = DOSDM.COMP_CD 
+				            AND DOSD.MOTO_DENPYO_NO = DOSDM.DENPYO_NO 
+				        WHERE
+				          DOSD.SYORI_STATUS_KB = '1' 
+				          AND ( 
+				            (DOSD.DENPYO_PRINT_QT > 0) 
+				            OR ( 
+				              DOSD.DENPYO_PRINT_QT = 0 
+				              AND DOSD.LIST_FIRST_PRINT_DT IS NOT NULL
+				            ) 
+				            OR ( 
+				              DOSD.DENPYO_PRINT_QT = 0 
+				              AND DOSD.OROSHI_CANCEL_KB = '1' 
+				              AND DOSDM.LIST_FIRST_PRINT_DT IS NOT NULL
+				            )
+				          ) 
+				          AND DOSD.DELETE_FG = '0'
+				      ) DOSD 
+				    WHERE
+				      SD.COMP_CD = DOSD.COMP_CD 
+				      AND SD.SEQ_NB = DOSD.SEQ_NB
+			    ) 
+  		    /* #5754 Mod X.Liu 2017.08.03 (E)*/
+		]]>
+		</SQL>
+	</Dao>
+	/* #4389 Add X.Liu 2017.04.04 (E)*/
+</DaoSql>

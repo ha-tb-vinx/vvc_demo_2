@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+
+--><ErrorMail>
+	<Mail>
+		<CharSet>iso-2022-jp</CharSet>
+		<SmtpProp>mail.smtp.host</SmtpProp>
+		<SmtpServer></SmtpServer>
+		<FromAddress></FromAddress>
+		<FromName></FromName>
+		<Template>
+--- Message ---
+%text%
+---------------
+		</Template>
+	</Mail>
+</ErrorMail>

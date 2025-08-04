@@ -1,0 +1,164 @@
+//# COPYRIGHT cXXXXXXXXXX 2009
+//##############################################################################
+//#                                                                            #
+//#      ＜＜　マミーマート様MD基幹システム－商品実績　＞＞                    #
+//#                                                                            #
+//#　プログラム名　　：　新単品明細データ取込処理                              #
+//#　ジョブＩＤ　　　：　URIB061010                                            #
+//#　プログラムＩＤ　：　ShinTanpinMeisaiDataImport                            #
+//#　版　　　　　数　：　V1.0                                                  #
+//#　作　　成　　日　：　2009.05.07                                            #
+//#                                                                            #
+//#　処理概要　：　新単品明細データ取込       	                               #
+//#                                                                            #
+//#　パラメタ　：                                                              #
+//#　　%1　―　Commonファイルパス                                              #
+//#　　%2　―　マクロファイルパス	                                           #
+//#　　%3　―　D5Tファイルパス                                                 #
+//#　　%4　―　CSVファイルパス                                                 #
+//#　　%5　―　カタログファイルパス                                            #
+//#　　%6　―　法人コードパス                                                  #
+//#　コメント　：　(前提条件)                                                  #
+//#                                                                            #
+//#　修正履歴：                                                                #
+//#　　版数  日付        更新者     内容                                       #
+//#　　----  ----------  ---------  -----------------------------------------  #
+//#　　V1.0  2009.05.07  松本       新規作成                                   #
+//##############################################################################
+
+
+//##########################################################################
+$echo ■クリア
+//##########################################################################
+$ClearWS()
+$ParaAllClear()
+
+//##########################################################################
+$echo ■パラメーターセット
+//##########################################################################
+//#Commonファイルパス
+$ParaSet("%COMMON_PATH",%1)
+//#マクロファイルパス
+$ParaSet("%MAC_PATH",%2)
+//#D5T格納パス
+$ParaSet("%D5T_PATH",%3)
+//#CSVパス
+$ParaSet("%CSV_PATH",%4)
+//#カタログパス
+$ParaSet("%CTLG_PATH",%5)
+//#法人コード
+$ParaSet("%HOJIN_CD",%6)
+
+
+//##########################################################################
+$echo ■開始ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061010 新単品明細ログワーク 処理を開始します","=END=")
+
+
+//##########################################################################
+$echo ■テーブルファイルをロード
+//##########################################################################
+$Load("%D5T_PATH","WK_TANPIN_MEI")
+
+
+//##########################################################################
+$echo ■新単品明細ログワークの削除
+//##########################################################################
+//#削除対象を抽出
+$MultiSearch("WK_TANPIN_MEI","1","""COMP_CD"" = '%HOJIN_CD'")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","削除対象")
+
+$SetSUB("WK_TANPIN_MEI","1","%TMP_TARGET_CUR")
+$ParaSet("%TMP_TARGET_CUR","__SID")
+$SetComment("WK_TANPIN_MEI","%TMP_TARGET_CUR","新単品明細ログワーク")
+
+
+//##########################################################################
+$echo ■CSVファイルを読込
+//##########################################################################
+//#CSVファイル読込み
+$TxtReadAppointedFile("IF_TANPIN_MEI_NORMAL","%CTLG_PATH","IF_TANPIN_MEI.CTLG","%CSV_PATH","SPAL.ftp")
+
+//#CSV差分ファイル読込み
+$TxtReadAppointedFile("IF_TANPIN_MEI_SABUN","%CTLG_PATH","IF_TANPIN_MEI.CTLG","%CSV_PATH","SPAL_SABUN.ftp")
+
+//#読込んだファイルをUNION
+$Union("IF_TANPIN_MEI","IF_TANPIN_MEI_NORMAL","IF_TANPIN_MEI_SABUN","1","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+
+//#文字列で読み込んだ項目を数値に変換
+$TypeConv("IF_TANPIN_MEI","TOROHIKI_NB","Numeric(4,0)")
+$TypeConv("IF_TANPIN_MEI","TORIHIKI_MEISAI_NB","Numeric(4,0)")
+$TypeConv("IF_TANPIN_MEI","SCAN_COUNT_QT","Numeric(4,0)")
+$TypeConv("IF_TANPIN_MEI","KEYBOARD_COUNT_QT","Numeric(4,0)")
+$TypeConv("IF_TANPIN_MEI","URIAGE_QT","Numeric(9,0)")
+$TypeConv("IF_TANPIN_MEI","URIAGE_KOMI_VL","Numeric(13,0)")
+$TypeConv("IF_TANPIN_MEI","NEBIKI_QT","Numeric(9,0)")
+$TypeConv("IF_TANPIN_MEI","NEBIKI_VL","Numeric(13,0)")
+$TypeConv("IF_TANPIN_MEI","SET_NEBIKI_VL","Numeric(10,0)")
+$TypeConv("IF_TANPIN_MEI","URIAGE_GENKA_VL","Numeric(14,2)")
+$TypeConv("IF_TANPIN_MEI","MIX_MATCH_NEBIKI_VL","Numeric(13,0)")
+$TypeConv("IF_TANPIN_MEI","DECIMAL_QT","Numeric(9,2)")
+
+//#文字列のフィールドは削除
+$DelColumn("IF_TANPIN_MEI","TOROHIKI_NB")
+$DelColumn("IF_TANPIN_MEI","TORIHIKI_MEISAI_NB")
+$DelColumn("IF_TANPIN_MEI","SCAN_COUNT_QT")
+$DelColumn("IF_TANPIN_MEI","KEYBOARD_COUNT_QT")
+$DelColumn("IF_TANPIN_MEI","URIAGE_QT")
+$DelColumn("IF_TANPIN_MEI","URIAGE_KOMI_VL")
+$DelColumn("IF_TANPIN_MEI","NEBIKI_QT")
+$DelColumn("IF_TANPIN_MEI","NEBIKI_VL")
+$DelColumn("IF_TANPIN_MEI","SET_NEBIKI_VL")
+$DelColumn("IF_TANPIN_MEI","URIAGE_GENKA_VL")
+$DelColumn("IF_TANPIN_MEI","MIX_MATCH_NEBIKI_VL")
+$DelColumn("IF_TANPIN_MEI","DECIMAL_QT")
+
+
+//##########################################################################
+$echo ■取得したデータをまとめる
+//##########################################################################
+//#項目を追加
+$AddRealColumn("IF_TANPIN_MEI","[RecNo]","COMP_CD","String")
+$AddRealColumn("IF_TANPIN_MEI","DECIMAL_QT_#1","INSERT_USER_ID","String")
+$AddRealColumn("IF_TANPIN_MEI","INSERT_USER_ID","INSERT_TS","String")
+$AddRealColumn("IF_TANPIN_MEI","INSERT_TS","UPDATE_USER_ID","String")
+$AddRealColumn("IF_TANPIN_MEI","UPDATE_USER_ID","UPDATE_TS","String")
+
+//#法人コード
+$Calc("IF_TANPIN_MEI","COMP_CD","1","*","$""%HOJIN_CD""","1")
+
+//#DPTコードを整形
+$Calc("IF_TANPIN_MEI","BUNRUI1_CD","1","*","$Extract($@BUNRUI1_CD,2,2)","1")
+
+//#取引日時を整形
+$Calc("IF_TANPIN_MEI","YR","1","*","$&($&($&($&($&($@YR,$@MN),$@DD),$@HR),$@MI),$@SC)","1")
+
+//#不要な項目を削除
+$DelColumn("IF_TANPIN_MEI","MN")
+$DelColumn("IF_TANPIN_MEI","DD")
+$DelColumn("IF_TANPIN_MEI","HR")
+$DelColumn("IF_TANPIN_MEI","MI")
+$DelColumn("IF_TANPIN_MEI","SC")
+
+//#更新日時
+$Calc("IF_TANPIN_MEI","INSERT_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","1")
+$Calc("IF_TANPIN_MEI","INSERT_USER_ID","1","*","$""URIB061""","1")
+$Calc("IF_TANPIN_MEI","UPDATE_TS","1","*","$&($DateToStr(SYSDATE,1),$TimeToStr(SYSTIME,1))","1")
+$Calc("IF_TANPIN_MEI","UPDATE_USER_ID","1","*","$""URIB061""","1")
+
+
+//##########################################################################
+$echo ■新単品明細ログワークにインサート
+//##########################################################################
+$Union("WK_TANPIN_MEI_UNION","WK_TANPIN_MEI","IF_TANPIN_MEI","%TMP_TARGET_CUR","1","=BEGIN=","*","=END=","=BEGIN=","*","=END=","N")
+$Drop("WK_TANPIN_MEI")
+$Rename("WK_TANPIN_MEI","WK_TANPIN_MEI_UNION")
+$Save("%D5T_PATH","WK_TANPIN_MEI")
+
+
+//##########################################################################
+$echo ■終了ログを出力
+//##########################################################################
+//# $SubExec("%COMMON_PATH","DebugLog.opb","=BEGIN=","URIB061010 新単品明細ログワーク 処理を終了します","=END=")

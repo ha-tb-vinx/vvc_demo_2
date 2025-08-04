@@ -1,0 +1,4 @@
+encoding=SJIS
+C:\
+D:\
+

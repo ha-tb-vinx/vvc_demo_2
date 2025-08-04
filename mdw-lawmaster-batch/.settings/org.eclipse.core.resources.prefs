@@ -1,0 +1,9 @@
+eclipse.preferences.version=1
+encoding//defaultroot/WEB-INF/properties/batchJob.properties=MS932
+encoding//defaultroot/WEB-INF/properties/common.properties=MS932
+encoding//defaultroot/WEB-INF/properties/database.properties=MS932
+encoding//defaultroot/WEB-INF/properties/stcliblog4j.properties=MS932
+encoding//release/production_internet/properties/stcliblog4j.properties=MS932
+encoding//src/mdware/master/batch/process/mb38/MB380C01_CreateSyohinInit.java=UTF-8
+encoding//src/mdware/master/batch/process/mb38/MB380C02_CreateSyohin.java=UTF-8
+encoding/<project>=UTF-8

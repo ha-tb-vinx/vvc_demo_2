@@ -1,0 +1,105 @@
+/**
+ * <P>タイトル : 新ＭＤシステム　マスターメンテナンス  mst180301用店別例外マスタの画面項目(一覧)格納用クラス</P>
+ * <P>説明 : 新ＭＤシステムで使用するmst180301用店別例外マスタの画面項目格納用クラス</P>
+ *  <P>著作権: Copyright (c) 2005</p>								
+ *  <P>会社名: Vinculum Japan Corp.</P>								
+ * @author Sirius Makuta
+ * @version 1.0
+ * @see なし								
+ */
+package mdware.master.common.bean;
+
+import jp.co.vinculumjapan.stc.log.StcLog;
+import java.util.ArrayList;
+
+
+/**
+ * <P>タイトル : 新ＭＤシステム　マスターメンテナンス  mstB10301店舗仮登録照会の画面項目(一覧)格納用クラス</P>
+ * <P>説明 : 新ＭＤシステムで使用するmstB10301店舗仮登録照会の画面項目格納用クラス</P>
+ *  <P>著作権: Copyright (c) 2005</p>								
+ *  <P>会社名: Vinculum Japan Corp.</P>								
+ * @author Sirius Makuta
+ * @version 1.0
+ * @see なし								
+ */
+public class mstB10301_KeepMeisaiBean
+{
+	private static final StcLog stcLog = StcLog.getInstance();
+
+	private ArrayList Meisai	= new ArrayList();	// 一覧の明細
+	private String CurrentPageNo	= "";				// 現在表示ページ
+	private String LastPageNo		= "";				// 最終ページ
+	private String MaxRows			= "";				// 最大行数
+	private String EndRowInPage	= "";				// 現在ページの終了行
+	private String StartRowInPage	= "";				// 現在ページの開始行
+	private String DispRows		= "30";				//一画面表示明細数
+
+	public String getDispRows() {
+		return DispRows;
+	}
+
+	public void setDispRows(String dispRows) {
+		DispRows = dispRows;
+	}
+
+	// Meisaiに対するセッターとゲッターの集合
+	public boolean setMeisai(ArrayList Meisai) {
+		this.Meisai = Meisai;
+		return true;
+	}
+	
+	public ArrayList getMeisai() {
+		return this.Meisai;
+	}
+	
+	//CurrentPageNoに対するセッターとゲッターの集合
+	public boolean setCurrentPageNo(String CurrentPageNo) {
+		this.CurrentPageNo = CurrentPageNo;
+		return true;
+	}
+	
+	public String getCurrentPageNo() {
+		return this.CurrentPageNo;
+	}
+	
+	// LastPageNoに対するセッターとゲッターの集合
+	public boolean setLastPageNo(String LastPageNo) {
+		this.LastPageNo = LastPageNo;
+		return true;
+	}
+	
+	public String getLastPageNo() {
+		return this.LastPageNo;
+	}
+	
+	// MaxRowsに対するセッターとゲッターの集合
+	public boolean setMaxRows(String MaxRows) {
+		this.MaxRows = MaxRows;
+		return true;
+	}
+	
+	public String getMaxRows() {
+		return this.MaxRows;
+	}
+	
+	// EndRowInPageに対するセッターとゲッターの集合
+	public boolean setEndRowInPage(String EndRowInPage) {
+		this.EndRowInPage = EndRowInPage;
+		return true;
+	}
+	
+	public String getEndRowInPage() {
+		return this.EndRowInPage;
+	}
+
+	// StartRowInPageに対するセッターとゲッターの集合
+	public boolean setStartRowInPage(String StartRowInPage) {
+		this.StartRowInPage = StartRowInPage;
+		return true;
+	}
+	
+	public String getStartRowInPage() {
+		return this.StartRowInPage;
+	}
+
+}
